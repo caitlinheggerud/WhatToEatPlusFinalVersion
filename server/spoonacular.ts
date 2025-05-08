@@ -21,6 +21,7 @@ export async function searchRecipes(query: string, diet?: string, mealType?: str
       fillIngredients: 'true',
       sort: 'popularity',  // Sort by popularity for better results
       instructionsRequired: 'true',  // Ensure recipes have instructions
+      addRecipeNutrition: 'true',  // Include nutrition information
     });
 
     if (diet) params.append('diet', diet);
@@ -57,6 +58,7 @@ export async function getRandomRecipes(tags?: string[], number: number = 3, into
       addRecipeInformation: 'true',
       fillIngredients: 'true',
       instructionsRequired: 'true',  // Ensure recipes have instructions
+      addRecipeNutrition: 'true',  // Include nutrition information
     });
     
     if (tags && tags.length > 0) {
