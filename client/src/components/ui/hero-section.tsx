@@ -27,13 +27,18 @@ export function HeroSection({ onScanClick }: HeroSectionProps) {
               <ReceiptIcon className="mr-2 h-5 w-5" />
               开始扫描
             </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="border-white text-white hover:bg-white/10"
-            >
-              查看报表
-            </Button>
+            <Link href="/dashboard">
+              <div>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="border-white text-white hover:bg-white/10"
+                >
+                  <BarChart3 className="mr-2 h-5 w-5" />
+                  查看报表
+                </Button>
+              </div>
+            </Link>
           </div>
         </div>
       </div>

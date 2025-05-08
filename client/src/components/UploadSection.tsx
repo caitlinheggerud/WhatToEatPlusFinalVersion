@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload } from "lucide-react";
+import { Upload, ImageIcon } from "lucide-react";
 
 interface UploadSectionProps {
   onFileSelect: (file: File) => void;
@@ -50,18 +50,21 @@ export default function UploadSection({
   return (
     <div className="mb-8">
       <div 
-        className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer bg-white"
+        className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer bg-white"
         onClick={() => fileInputRef.current?.click()}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <div className="mx-auto w-12 h-12 text-gray-400 mb-3">
-          <Upload className="w-full h-full" />
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
+          <ImageIcon className="h-8 w-8 text-primary" />
         </div>
-        <p className="text-sm font-medium mb-1">Click or drag to upload receipt photo</p>
-        <p className="text-xs text-gray-500 mb-3">Supports JPG, PNG formats</p>
-        <Button>Select Image</Button>
+        <p className="text-lg font-medium mb-2">Upload Receipt Image</p>
+        <p className="text-sm text-muted-foreground mb-4">Click or drag & drop to upload</p>
+        <Button className="bg-primary hover:bg-primary/90">
+          <Upload className="mr-2 h-4 w-4" />
+          Select Image
+        </Button>
         <input 
           type="file" 
           ref={fileInputRef}
@@ -71,17 +74,18 @@ export default function UploadSection({
         />
       </div>
       
-      <div className="mt-2 text-xs text-gray-500 text-center">
-        Receipts will be processed using Gemini API
+      <div className="mt-2 text-xs text-muted-foreground text-center">
+        收据将使用Google Gemini API进行分析处理
       </div>
       
       {showAnalyzeButton && (
-        <div className="mt-4 text-center">
+        <div className="mt-6 text-center">
           <Button 
-            className="w-full bg-primary hover:bg-indigo-700"
+            className="w-full btn-gradient py-2.5 text-base font-medium"
             onClick={onAnalyze}
           >
-            Analyze Receipt
+            <ImageIcon className="mr-2 h-4 w-4" />
+            分析收据
           </Button>
         </div>
       )}
