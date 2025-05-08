@@ -22,7 +22,7 @@ export const receiptItems = pgTable("receipt_items", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
-  price: numeric("price").notNull(),
+  price: text("price").notNull(),
   category: text("category"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

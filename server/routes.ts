@@ -323,7 +323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const validatedItem = insertReceiptItemSchema.parse({
             name: itemData.name,
             description: itemData.description || null,
-            price: parseFloat(itemData.price.replace(/[^\d.-]/g, '')), // Remove currency symbols
+            price: itemData.price, // Keep as string for the schema
             category: itemData.category || "Others"
           });
           
