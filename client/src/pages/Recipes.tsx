@@ -166,6 +166,19 @@ function Recipes() {
     if (isFavorited) {
       // Remove from favorites
       newFavorites = favorites.filter(id => id !== recipeId);
+      
+      // Also remove from recipe data storage if it exists
+      const storedRecipeData = localStorage.getItem('favoriteRecipeData');
+      if (storedRecipeData) {
+        try {
+          const parsedData: Recipe[] = JSON.parse(storedRecipeData);
+          const updatedData = parsedData.filter(recipe => recipe.id !== recipeId);
+          localStorage.setItem('favoriteRecipeData', JSON.stringify(updatedData));
+        } catch (e) {
+          console.error("Failed to parse favorite recipe data when removing:", e);
+        }
+      }
+      
       toast({
         title: "Removed from favorites",
         description: "Recipe has been removed from your favorites",
@@ -174,6 +187,32 @@ function Recipes() {
     } else {
       // Add to favorites
       newFavorites = [...favorites, recipeId];
+      
+      // Also store the recipe data for external API recipes
+      const recipeToAdd = recipes.find(r => r.id === recipeId) || randomRecipe;
+      
+      if (recipeToAdd) {
+        const storedRecipeData = localStorage.getItem('favoriteRecipeData');
+        let currentData: Recipe[] = [];
+        
+        if (storedRecipeData) {
+          try {
+            currentData = JSON.parse(storedRecipeData);
+            if (!Array.isArray(currentData)) {
+              currentData = [];
+            }
+          } catch (e) {
+            console.error("Failed to parse favorite recipe data when adding:", e);
+          }
+        }
+        
+        // Only add if not already in the data
+        if (!currentData.some(r => r.id === recipeId)) {
+          currentData.push(recipeToAdd);
+          localStorage.setItem('favoriteRecipeData', JSON.stringify(currentData));
+        }
+      }
+      
       toast({
         title: "Added to favorites",
         description: "Recipe has been added to your favorites",

@@ -40,11 +40,38 @@ function Favorites() {
   
   // Fetch all recipes
   const { data: allRecipes = [], isLoading, error } = useQuery<Recipe[]>({
-    queryKey: ['/api/recipes'],
+    queryKey: ['/api/recipes', 'favorites'],
     queryFn: async () => {
-      return await getRecipes({
-        useApi: false // Only fetch local recipes to be faster
+      // First try to get local recipes
+      const localRecipes = await getRecipes({
+        useApi: false // Get local recipes first
       });
+      
+      // If we have favorites from external APIs, try to get those too
+      let externalRecipes: Recipe[] = [];
+      const storedRecipeData = localStorage.getItem('favoriteRecipeData');
+      
+      if (storedRecipeData) {
+        try {
+          const parsedData = JSON.parse(storedRecipeData);
+          if (Array.isArray(parsedData)) {
+            externalRecipes = parsedData;
+          }
+        } catch (e) {
+          console.error("Failed to parse favorite recipe data:", e);
+        }
+      }
+      
+      // Combine both sources, avoiding duplicates by ID
+      const allRecipes = [...localRecipes];
+      
+      externalRecipes.forEach(externalRecipe => {
+        if (!allRecipes.some(recipe => recipe.id === externalRecipe.id)) {
+          allRecipes.push(externalRecipe);
+        }
+      });
+      
+      return allRecipes;
     },
   });
   
