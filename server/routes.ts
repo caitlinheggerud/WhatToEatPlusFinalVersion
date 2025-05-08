@@ -395,7 +395,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all receipt items (legacy endpoint)
   app.get("/api/receipts/items", async (req: Request, res: Response) => {
     try {
-      const items = await storage.getReceiptItems();
+      // Check if a receipt ID is provided as a query parameter
+      const receiptId = req.query.receiptId ? parseInt(req.query.receiptId as string) : null;
+      
+      let items;
+      if (receiptId) {
+        // If receipt ID is provided, get items for that receipt
+        items = await storage.getReceiptItemsByReceiptId(receiptId);
+      } else {
+        // If no receipt ID is provided, get all receipt items
+        items = await storage.getReceiptItems();
+      }
+      
       return res.status(200).json(items);
     } catch (error) {
       console.error("Error fetching receipt items:", error);

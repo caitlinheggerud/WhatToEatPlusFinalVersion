@@ -20,13 +20,20 @@ export default function Dashboard() {
     async function fetchReceipts() {
       try {
         setLoading(true);
-        // Use getReceipts() instead of getReceiptItems() to fetch all receipts
+        // First fetch all receipt headers
         const receiptData = await getReceipts();
         
-        // If we have receipts, get the items for the most recent receipt
+        // If we have receipts, get all the receipt items
         if (receiptData && receiptData.length > 0) {
-          const recentItems = await getReceiptItems();
-          setReceipts(recentItems);
+          try {
+            // Get all receipt items using the updated endpoint
+            const allItems = await getReceiptItems();
+            setReceipts(allItems);
+          } catch (itemsError) {
+            console.error("Error fetching receipt items:", itemsError);
+            // Fallback to empty items if there's an error
+            setReceipts([]);
+          }
         } else {
           setReceipts([]);
         }

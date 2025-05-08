@@ -185,3 +185,5 @@ export async function getRandomRecipe(params: {
   const response = await apiRequest('GET', `/api/recipes/random?${searchParams.toString()}`);
   return await response.json();
 }
+
+
