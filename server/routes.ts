@@ -66,27 +66,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Prepare the prompt for Gemini API
         const prompt = `
-          Extract the items from this receipt. For each item, provide:
-          1. Name (product name)
-          2. Description (if available, like brand, size, etc.)
-          3. Price (including currency symbol if present)
-          4. Category (classify the item into one of these categories: Food, Beverage, Household, Clothing, Electronics, Personal Care, Others)
+          Analyze this receipt and extract the following information as a valid JSON array:
           
-          Try to determine the full product name from any abbreviations, and assign an appropriate category based on the item type.
+          For each item on the receipt, include:
+          - "name": The product name (expand any abbreviations)
+          - "description": Brand, size, or other details (or null if none)
+          - "price": Price with currency symbol
+          - "category": One of these categories: Food, Beverage, Household, Clothing, Electronics, Personal Care, Others
           
-          IMPORTANT: Also identify if there's a GST (Goods and Services Tax) entry on the receipt. If there is, include it as a separate item with the name "GST" or similar tax label found on the receipt, the exact GST amount, and category as "Tax".
-
-          Also extract the TOTAL amount from the receipt if present.
+          If there's a GST or tax entry, include it as:
+          - "name": "GST" or whatever tax label is on the receipt
+          - "description": "Goods and Services Tax" or similar
+          - "price": The exact tax amount with currency symbol
+          - "category": "Tax"
           
-          Format your response as a JSON array like this:
+          If there's a total amount, include it as:
+          - "name": "TOTAL"
+          - "description": "Total Payment"
+          - "price": The total amount with currency symbol
+          - "category": "Total"
+          
+          Format your response ONLY as a valid JSON array like this:
           [
-            {"name": "Item Name", "description": "Item Description", "price": "¥10.00", "category": "Food"},
-            {"name": "Another Item", "description": "Another Description", "price": "¥5.50", "category": "Beverage"},
-            {"name": "GST", "description": "Goods and Services Tax", "price": "¥1.55", "category": "Tax"},
-            {"name": "TOTAL", "description": "Total Payment", "price": "¥17.05", "category": "Total"}
+            {"name": "Item 1", "description": "Description 1", "price": "$10.00", "category": "Food"},
+            {"name": "GST", "description": "Goods and Services Tax", "price": "$1.00", "category": "Tax"},
+            {"name": "TOTAL", "description": "Total Payment", "price": "$11.00", "category": "Total"}
           ]
           
-          Only include the JSON array in your response, nothing else.
+          Provide nothing but the properly formatted JSON array.
         `;
 
         // Generate content with Gemini
@@ -105,9 +112,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const text = response.text();
         
         // Clean the text to ensure it's valid JSON
-        const jsonText = text.replace(/```json|```/g, '').trim();
+        let jsonText = text.replace(/```json|```/g, '').trim();
+        
+        // Additional cleaning to handle potential JSON formatting issues
+        if (!jsonText.startsWith('[') || !jsonText.endsWith(']')) {
+          const startIdx = jsonText.indexOf('[');
+          const endIdx = jsonText.lastIndexOf(']');
+          if (startIdx !== -1 && endIdx !== -1) {
+            jsonText = jsonText.substring(startIdx, endIdx + 1);
+          }
+        }
         
         try {
+          // Log the text being parsed
+          console.log("Attempting to parse JSON:", jsonText);
+          
           // Parse the response
           const parsedItems = JSON.parse(jsonText);
           
