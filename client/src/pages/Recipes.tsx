@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import LoadingState from '@/components/LoadingState';
 import ErrorState from '@/components/ErrorState';
-import { Utensils, ExternalLink } from 'lucide-react';
+import { Utensils, ExternalLink, X } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { getRecipes, getRandomRecipe } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
@@ -227,6 +228,69 @@ function Recipes() {
                 </Button>
               </div>
             </div>
+          </div>
+          
+          <div className="mb-6">
+            <Label htmlFor="allergies" className="mb-2 block">Allergies</Label>
+            <div className="flex gap-2 items-center mb-2">
+              <Input
+                id="allergies"
+                placeholder="Add allergy (e.g., peanuts, dairy, gluten)"
+                className="flex-1"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                    e.preventDefault();
+                    const newAllergy = e.currentTarget.value.trim().toLowerCase();
+                    if (!filters.allergies.includes(newAllergy)) {
+                      setFilters({
+                        ...filters, 
+                        allergies: [...filters.allergies, newAllergy]
+                      });
+                    }
+                    e.currentTarget.value = '';
+                  }
+                }}
+              />
+              <Button 
+                variant="secondary"
+                onClick={() => {
+                  const input = document.getElementById('allergies') as HTMLInputElement;
+                  if (input.value.trim()) {
+                    const newAllergy = input.value.trim().toLowerCase();
+                    if (!filters.allergies.includes(newAllergy)) {
+                      setFilters({
+                        ...filters, 
+                        allergies: [...filters.allergies, newAllergy]
+                      });
+                    }
+                    input.value = '';
+                  }
+                }}
+              >
+                Add
+              </Button>
+            </div>
+            {filters.allergies.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {filters.allergies.map((allergy, index) => (
+                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                    {allergy}
+                    <X 
+                      className="h-3 w-3 cursor-pointer" 
+                      onClick={() => {
+                        setFilters({
+                          ...filters,
+                          allergies: filters.allergies.filter((_, i) => i !== index)
+                        });
+                      }}
+                    />
+                  </Badge>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">
+              Press Enter or click Add to add an allergy. Recipes containing these ingredients will be excluded.
+            </p>
           </div>
         </CardContent>
       </Card>
