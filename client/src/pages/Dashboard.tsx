@@ -44,18 +44,18 @@ export default function Dashboard() {
     fetchData();
   }, [toast]);
 
-  // Get unique categories
-  const categories = Array.from(new Set(receipts.map(item => item.category)));
+  // Get unique categories from receipt items
+  const categories = Array.from(new Set(receiptItems.map(item => item.category)));
   
-  // Filter receipts by category if a category is selected
-  const filteredReceipts = activeCategory 
-    ? receipts.filter(item => item.category === activeCategory)
-    : receipts;
+  // Filter receipt items by category if a category is selected
+  const filteredReceiptItems = activeCategory 
+    ? receiptItems.filter(item => item.category === activeCategory)
+    : receiptItems;
 
   // Calculate total by category
   const categoryTotals = categories.reduce((acc, category) => {
     if (category) { // Make sure category is not undefined
-      const total = receipts
+      const total = receiptItems
         .filter(item => item.category === category)
         .reduce((sum, item) => {
           const price = parseFloat(item.price.replace(/[^0-9.-]+/g, ""));
@@ -68,7 +68,7 @@ export default function Dashboard() {
   }, {} as Record<string, string>);
 
   // Calculate grand total
-  const grandTotal = receipts.reduce((sum, item) => {
+  const grandTotal = receiptItems.reduce((sum, item) => {
     const price = parseFloat(item.price.replace(/[^0-9.-]+/g, ""));
     return sum + (isNaN(price) ? 0 : price);
   }, 0).toFixed(2);
@@ -140,13 +140,19 @@ export default function Dashboard() {
           ))}
         </div>
 
-        <Tabs defaultValue="all" className="w-full">
+        <Tabs defaultValue="receipts" className="w-full">
           <TabsList>
-            <TabsTrigger value="all">All Items</TabsTrigger>
+            <TabsTrigger value="receipts">Receipts</TabsTrigger>
+            <TabsTrigger value="items">All Items</TabsTrigger>
             <TabsTrigger value="charts">Charts</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
-          <TabsContent value="all" className="space-y-4">
+          
+          <TabsContent value="receipts" className="space-y-4">
+            <ReceiptList receipts={receipts} loading={loading} />
+          </TabsContent>
+          
+          <TabsContent value="items" className="space-y-4">
             <div className="flex flex-wrap gap-2 my-4">
               {categories.map(category => (
                 <Badge

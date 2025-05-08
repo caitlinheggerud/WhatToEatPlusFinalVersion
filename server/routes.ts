@@ -391,8 +391,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all receipt items (legacy endpoint)
-  app.get("/api/receipts/items", async (req: Request, res: Response) => {
+  // Get all receipt items (legacy endpoint for backwards compatibility)
+  app.get("/api/receipt-items", async (req: Request, res: Response) => {
     try {
       const items = await storage.getReceiptItems();
       return res.status(200).json(items);

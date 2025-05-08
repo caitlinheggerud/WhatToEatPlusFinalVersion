@@ -52,6 +52,6 @@ export async function getReceiptWithItems(id: number): Promise<ReceiptWithItems>
  * Legacy: Fetches all receipt items from the server (flattened, not grouped by receipt)
  */
 export async function getReceiptItems(): Promise<any> {
-  const response = await apiRequest('GET', '/api/receipts/items');
+  const response = await apiRequest('GET', '/api/receipt-items');
   return await response.json();
 }

@@ -49,11 +49,19 @@ export default function Home() {
 
   const handleSaveResults = async () => {
     try {
-      await saveReceiptItems(items);
+      const savedReceipt = await saveReceiptItems(items);
       toast({
         title: "Saved Successfully",
         description: "Receipt data has been saved",
       });
+      
+      // Navigate to the receipt detail page after saving
+      if (savedReceipt && savedReceipt.id) {
+        window.location.href = `/receipt/${savedReceipt.id}`;
+      } else {
+        // Fallback to dashboard if no receipt ID is returned
+        window.location.href = "/dashboard";
+      }
     } catch (err) {
       console.error("Error saving receipt items:", err);
       toast({
