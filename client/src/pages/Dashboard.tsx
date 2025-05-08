@@ -109,15 +109,83 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" className="bg-white hover:bg-white/80 transition-colors">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="bg-white hover:bg-white/80 transition-colors"
+              onClick={() => {
+                toast({
+                  title: "Date Range",
+                  description: "Date range filtering will be available in a future update.",
+                  duration: 3000,
+                });
+              }}
+            >
               <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
               Date Range
             </Button>
-            <Button variant="outline" size="sm" className="bg-white hover:bg-white/80 transition-colors">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="bg-white hover:bg-white/80 transition-colors"
+              onClick={() => {
+                toast({
+                  title: "Filter",
+                  description: "Additional filtering options will be available in a future update.",
+                  duration: 3000,
+                });
+              }}
+            >
               <FilterIcon className="mr-2 h-4 w-4 text-primary" />
               Filter
             </Button>
-            <Button variant="outline" size="sm" className="bg-white hover:bg-white/80 transition-colors">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="bg-white hover:bg-white/80 transition-colors"
+              onClick={() => {
+                // Simple CSV export functionality
+                if (receipts.length === 0) {
+                  toast({
+                    title: "No Data",
+                    description: "There are no items to export.",
+                    variant: "destructive",
+                    duration: 3000,
+                  });
+                  return;
+                }
+                
+                // Create CSV content
+                const headers = ["Name", "Category", "Price"];
+                const csvRows = [
+                  headers.join(","),
+                  ...receipts.map(item => 
+                    [
+                      `"${item.name.replace(/"/g, '""')}"`, 
+                      `"${item.category || 'Other'}"`, 
+                      `"${item.price}"`
+                    ].join(",")
+                  )
+                ];
+                const csvContent = csvRows.join("\n");
+                
+                // Create download link
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'receipt_items.csv');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                toast({
+                  title: "Export Successful",
+                  description: "Your receipt items have been exported to CSV.",
+                  duration: 3000,
+                });
+              }}
+            >
               <DownloadIcon className="mr-2 h-4 w-4 text-primary" />
               Export
             </Button>
