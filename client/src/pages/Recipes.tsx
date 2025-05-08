@@ -223,6 +223,11 @@ function Recipes() {
     // Update state and localStorage
     setFavorites(newFavorites);
     localStorage.setItem('favorites', JSON.stringify(newFavorites));
+    
+    // Dispatch a custom event to notify other components about favorites change
+    window.dispatchEvent(new CustomEvent('favoritesUpdated', { 
+      detail: { favorites: newFavorites } 
+    }));
   };
 
   const renderRecipeCard = (recipe: Recipe, isRandom: boolean = false) => (
