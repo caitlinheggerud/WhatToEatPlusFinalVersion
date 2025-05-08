@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { enhanceImage, enhanceImageResolution } from "./deepai";
 import { 
   insertReceiptItemSchema, 
   receiptItemsResponseSchema,
