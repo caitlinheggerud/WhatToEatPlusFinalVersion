@@ -52,48 +52,54 @@ function Landing() {
             Why use <span className="text-gradient">WhatToEat+</span>?
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-fr">
             {/* Feature Card 1 */}
-            <Link href="/receipts">
-              <Card className="hover-card bg-white/70 shadow-sm border-border/60 dark:bg-gray-800 dark:border-gray-700 overflow-hidden cursor-pointer transition-shadow hover:shadow-md">
-                <CardContent className="p-6 flex flex-col items-center text-center">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                    <ReceiptIcon className="h-6 w-6 text-primary" />
+            <Link href="/receipts" className="h-full">
+              <Card className="hover-card bg-white/70 shadow-sm border-border/60 dark:bg-gray-800 dark:border-gray-700 overflow-hidden cursor-pointer transition-shadow hover:shadow-md h-full flex flex-col">
+                <CardContent className="p-6 flex flex-col items-center text-center h-full justify-between">
+                  <div className="flex flex-col items-center">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                      <ReceiptIcon className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">Scan Receipts</h3>
+                    <p className="text-muted-foreground">
+                      Upload your grocery receipts and automatically extract items using AI.
+                    </p>
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">Scan Receipts</h3>
-                  <p className="text-muted-foreground">
-                    Upload your grocery receipts and automatically extract items using AI.
-                  </p>
                 </CardContent>
               </Card>
             </Link>
             
             {/* Feature Card 2 */}
-            <Link href="/inventory">
-              <Card className="hover-card bg-white/70 shadow-sm border-border/60 dark:bg-gray-800 dark:border-gray-700 overflow-hidden cursor-pointer transition-shadow hover:shadow-md">
-                <CardContent className="p-6 flex flex-col items-center text-center">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                    <ShoppingBasketIcon className="h-6 w-6 text-primary" />
+            <Link href="/inventory" className="h-full">
+              <Card className="hover-card bg-white/70 shadow-sm border-border/60 dark:bg-gray-800 dark:border-gray-700 overflow-hidden cursor-pointer transition-shadow hover:shadow-md h-full flex flex-col">
+                <CardContent className="p-6 flex flex-col items-center text-center h-full justify-between">
+                  <div className="flex flex-col items-center">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                      <ShoppingBasketIcon className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">Track Inventory</h3>
+                    <p className="text-muted-foreground">
+                      Organize your pantry and reduce food waste with smart inventory management.
+                    </p>
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">Track Inventory</h3>
-                  <p className="text-muted-foreground">
-                    Organize your pantry and reduce food waste with smart inventory management.
-                  </p>
                 </CardContent>
               </Card>
             </Link>
             
             {/* Feature Card 3 */}
-            <Link href="/recipes">
-              <Card className="hover-card bg-white/70 shadow-sm border-border/60 dark:bg-gray-800 dark:border-gray-700 overflow-hidden cursor-pointer transition-shadow hover:shadow-md">
-                <CardContent className="p-6 flex flex-col items-center text-center">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                    <UtensilsCrossedIcon className="h-6 w-6 text-primary" />
+            <Link href="/recipes" className="h-full">
+              <Card className="hover-card bg-white/70 shadow-sm border-border/60 dark:bg-gray-800 dark:border-gray-700 overflow-hidden cursor-pointer transition-shadow hover:shadow-md h-full flex flex-col">
+                <CardContent className="p-6 flex flex-col items-center text-center h-full justify-between">
+                  <div className="flex flex-col items-center">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                      <UtensilsCrossedIcon className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">Find Recipes</h3>
+                    <p className="text-muted-foreground">
+                      Get personalized recipe recommendations based on your available ingredients.
+                    </p>
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">Find Recipes</h3>
-                  <p className="text-muted-foreground">
-                    Get personalized recipe recommendations based on your available ingredients.
-                  </p>
                 </CardContent>
               </Card>
             </Link>
