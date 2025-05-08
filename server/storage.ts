@@ -361,23 +361,43 @@ export class DatabaseStorage implements IStorage {
           // Find recipes where at least some ingredients match inventory
           const ingredientNames = inventoryItemNames.map(item => item.name.toLowerCase());
           
-          // This is a simplified match based on item names
-          // In a real app, this would be more sophisticated with proper ingredient matching
-          const recipeIdsWithMatchingIngredients = await db
-            .select({ recipeId: recipeIngredients.recipeId })
-            .from(recipeIngredients)
-            .where(
-              sql`lower(${recipeIngredients.name}) in (${ingredientNames.join(',')})`
-            )
-            .groupBy(recipeIngredients.recipeId);
-          
-          if (recipeIdsWithMatchingIngredients.length > 0) {
-            query = query.where(
-              inArray(
-                recipes.id, 
-                recipeIdsWithMatchingIngredients.map(r => r.recipeId)
-              )
-            );
+          if (ingredientNames.length > 0) {
+            // Get all recipe ingredients first
+            const allRecipeIngredients = await db
+              .select({
+                recipeId: recipeIngredients.recipeId,
+                name: recipeIngredients.name
+              })
+              .from(recipeIngredients);
+            
+            // Find recipes where ingredients match inventory
+            // Group recipe IDs by those that have at least one matching ingredient
+            const recipeIdsWithMatchingIngredients = new Set<number>();
+            
+            allRecipeIngredients.forEach(ingredient => {
+              const ingredientNameLower = ingredient.name.toLowerCase();
+              for (const inventoryItemName of ingredientNames) {
+                // Check if the ingredient contains the inventory item name or vice versa
+                if (ingredientNameLower.includes(inventoryItemName) || 
+                    inventoryItemName.includes(ingredientNameLower)) {
+                  recipeIdsWithMatchingIngredients.add(ingredient.recipeId);
+                  break;
+                }
+              }
+            });
+            
+            // Apply the filter if we found any matches
+            if (recipeIdsWithMatchingIngredients.size > 0) {
+              query = query.where(
+                inArray(
+                  recipes.id, 
+                  Array.from(recipeIdsWithMatchingIngredients)
+                )
+              );
+            } else {
+              // If we have inventory items but no recipes match, return empty result
+              return [];
+            }
           }
         }
       }
