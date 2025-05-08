@@ -45,16 +45,12 @@ export default function ResultSection({
   // Get GST amount if present
   const gstAmount = gstItem ? 
     parseFloat(gstItem.price.replace(/[^\d.-]/g, '')) : 
-    0;
+    null;
   
-  // Calculate GST if not found (7% of subtotal)
-  const calculatedGst = gstAmount || (subtotal * 0.07);
-  
-  // Get total from totalItem or calculate it (subtotal + GST)
-  const calculatedTotal = subtotal + calculatedGst;
+  // Get total from totalItem or just show subtotal if no GST
   const displayTotal = totalItem ? 
     parseFloat(totalItem.price.replace(/[^\d.-]/g, '')) : 
-    calculatedTotal;
+    subtotal;
   
   return (
     <div>
@@ -93,13 +89,15 @@ export default function ResultSection({
               </span>
             </div>
             
-            {/* Always show GST - if none found, calculate as 7% */}
-            <div className="flex justify-between items-center mt-2">
-              <span className="font-medium text-gray-700">{gstItem ? gstItem.name : "GST (7%)"}</span>
-              <span className="font-medium text-gray-700">
-                {`${currencySymbol}${(gstItem ? gstAmount : calculatedGst).toFixed(2)}`}
-              </span>
-            </div>
+            {/* Show GST only if found in receipt */}
+            {gstItem && gstAmount && (
+              <div className="flex justify-between items-center mt-2">
+                <span className="font-medium text-gray-700">{gstItem.name}</span>
+                <span className="font-medium text-gray-700">
+                  {`${currencySymbol}${gstAmount.toFixed(2)}`}
+                </span>
+              </div>
+            )}
             
             <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-200">
               <span className="font-semibold">Total</span>
