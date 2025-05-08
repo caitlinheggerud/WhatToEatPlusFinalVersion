@@ -403,6 +403,206 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Add receipt items to inventory
+  app.post("/api/receipts/:id/to-inventory", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid receipt ID" });
+      }
+      
+      const inventoryItems = await storage.addReceiptItemsToInventory(id);
+      return res.status(201).json(inventoryItems);
+    } catch (error) {
+      console.error("Error adding receipt items to inventory:", error);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Unknown error occurred" 
+      });
+    }
+  });
+  
+  // Inventory routes
+  
+  // Get all inventory items
+  app.get("/api/inventory", async (req: Request, res: Response) => {
+    try {
+      const items = await storage.getInventoryItems();
+      return res.status(200).json(items);
+    } catch (error) {
+      console.error("Error fetching inventory items:", error);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Unknown error occurred" 
+      });
+    }
+  });
+  
+  // Create a new inventory item
+  app.post("/api/inventory", async (req: Request, res: Response) => {
+    try {
+      const itemData = req.body;
+      
+      const newItem = await storage.createInventoryItem(itemData);
+      return res.status(201).json(newItem);
+    } catch (error) {
+      console.error("Error creating inventory item:", error);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Unknown error occurred" 
+      });
+    }
+  });
+  
+  // Update an inventory item
+  app.patch("/api/inventory/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid item ID" });
+      }
+      
+      const itemData = req.body;
+      const updatedItem = await storage.updateInventoryItem(id, itemData);
+      
+      if (!updatedItem) {
+        return res.status(404).json({ message: "Inventory item not found" });
+      }
+      
+      return res.status(200).json(updatedItem);
+    } catch (error) {
+      console.error("Error updating inventory item:", error);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Unknown error occurred" 
+      });
+    }
+  });
+  
+  // Delete an inventory item
+  app.delete("/api/inventory/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid item ID" });
+      }
+      
+      const deleted = await storage.deleteInventoryItem(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Inventory item not found" });
+      }
+      
+      return res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting inventory item:", error);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Unknown error occurred" 
+      });
+    }
+  });
+  
+  // Recipe routes
+  
+  // Get all meal types
+  app.get("/api/meal-types", async (req: Request, res: Response) => {
+    try {
+      const mealTypes = await storage.getMealTypes();
+      return res.status(200).json(mealTypes);
+    } catch (error) {
+      console.error("Error fetching meal types:", error);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Unknown error occurred" 
+      });
+    }
+  });
+  
+  // Get all dietary preferences
+  app.get("/api/dietary-preferences", async (req: Request, res: Response) => {
+    try {
+      const preferences = await storage.getDietaryPreferences();
+      return res.status(200).json(preferences);
+    } catch (error) {
+      console.error("Error fetching dietary preferences:", error);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Unknown error occurred" 
+      });
+    }
+  });
+  
+  // Get recipes with filtering
+  app.get("/api/recipes", async (req: Request, res: Response) => {
+    try {
+      const mealTypeId = req.query.mealTypeId ? parseInt(req.query.mealTypeId as string) : undefined;
+      const dietaryRestrictions = req.query.dietaryRestrictions ? 
+        (req.query.dietaryRestrictions as string).split(',').map(id => parseInt(id)) : 
+        undefined;
+      const searchTerm = req.query.searchTerm as string | undefined;
+      const inventoryBased = req.query.inventoryBased === 'true';
+      
+      const recipes = await storage.getRecipes({
+        mealTypeId,
+        dietaryRestrictions,
+        searchTerm,
+        inventoryBased
+      });
+      
+      return res.status(200).json(recipes);
+    } catch (error) {
+      console.error("Error fetching recipes:", error);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Unknown error occurred" 
+      });
+    }
+  });
+  
+  // Get a single recipe by ID
+  app.get("/api/recipes/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid recipe ID" });
+      }
+      
+      const recipe = await storage.getRecipeById(id);
+      
+      if (!recipe) {
+        return res.status(404).json({ message: "Recipe not found" });
+      }
+      
+      return res.status(200).json(recipe);
+    } catch (error) {
+      console.error("Error fetching recipe:", error);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Unknown error occurred" 
+      });
+    }
+  });
+  
+  // Get a random recipe
+  app.get("/api/recipes/random", async (req: Request, res: Response) => {
+    try {
+      const mealTypeId = req.query.mealTypeId ? parseInt(req.query.mealTypeId as string) : undefined;
+      const dietaryRestrictions = req.query.dietaryRestrictions ? 
+        (req.query.dietaryRestrictions as string).split(',').map(id => parseInt(id)) : 
+        undefined;
+      const inventoryBased = req.query.inventoryBased === 'true';
+      
+      const recipe = await storage.getRandomRecipe({
+        mealTypeId,
+        dietaryRestrictions,
+        inventoryBased
+      });
+      
+      if (!recipe) {
+        return res.status(404).json({ message: "No recipes found with the given criteria" });
+      }
+      
+      return res.status(200).json(recipe);
+    } catch (error) {
+      console.error("Error fetching random recipe:", error);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Unknown error occurred" 
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

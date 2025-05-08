@@ -2,14 +2,23 @@ import {
   users, type User, type InsertUser,
   receipts, type Receipt, type InsertReceipt, 
   receiptItems, type ReceiptItem, type InsertReceiptItem,
-  type ReceiptWithItems
+  type ReceiptWithItems,
+  inventoryItems, type InventoryItem, type InsertInventoryItem,
+  dietaryPreferences, type DietaryPreference, type InsertDietaryPreference,
+  mealTypes, type MealType, type InsertMealType,
+  recipes, type Recipe, type InsertRecipe,
+  recipeIngredients, type RecipeIngredient, type InsertRecipeIngredient,
+  recipeDietaryRestrictions, type RecipeDietaryRestriction, type InsertRecipeDietaryRestriction,
+  type RecipeFull
 } from "@shared/schema";
-import { db, eq, desc } from "./db";
+import { db } from "./db";
+import { eq, desc, and, inArray, like, or, sql } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
 // you might need
 
 export interface IStorage {
+  // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
@@ -25,6 +34,34 @@ export interface IStorage {
   getReceiptItems(): Promise<ReceiptItem[]>;
   getReceiptItemsByReceiptId(receiptId: number): Promise<ReceiptItem[]>;
   createReceiptWithItems(receipt: InsertReceipt, items: InsertReceiptItem[]): Promise<ReceiptWithItems>;
+  
+  // Inventory methods
+  createInventoryItem(item: InsertInventoryItem): Promise<InventoryItem>;
+  getInventoryItems(): Promise<InventoryItem[]>;
+  updateInventoryItem(id: number, item: Partial<InsertInventoryItem>): Promise<InventoryItem | undefined>;
+  deleteInventoryItem(id: number): Promise<boolean>;
+  addReceiptItemsToInventory(receiptId: number): Promise<InventoryItem[]>;
+  
+  // Recipe methods
+  createRecipe(recipe: InsertRecipe, ingredients: InsertRecipeIngredient[], dietaryRestrictionIds: number[]): Promise<Recipe>;
+  getRecipes(filters?: {
+    mealTypeId?: number;
+    dietaryRestrictions?: number[];
+    searchTerm?: string;
+    inventoryBased?: boolean;
+  }): Promise<Recipe[]>;
+  getRecipeById(id: number): Promise<RecipeFull | undefined>;
+  getRandomRecipe(filters?: {
+    mealTypeId?: number;
+    dietaryRestrictions?: number[];
+    inventoryBased?: boolean;
+  }): Promise<RecipeFull | undefined>;
+  
+  // Dietary preferences/meal types
+  getDietaryPreferences(): Promise<DietaryPreference[]>;
+  getMealTypes(): Promise<MealType[]>;
+  createDietaryPreference(pref: InsertDietaryPreference): Promise<DietaryPreference>;
+  createMealType(type: InsertMealType): Promise<MealType>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -126,6 +163,309 @@ export class DatabaseStorage implements IStorage {
       ...createdReceipt,
       items: createdItems
     };
+  }
+
+  // Inventory methods
+  async createInventoryItem(item: InsertInventoryItem): Promise<InventoryItem> {
+    const [createdItem] = await db
+      .insert(inventoryItems)
+      .values(item)
+      .returning();
+    return createdItem;
+  }
+
+  async getInventoryItems(): Promise<InventoryItem[]> {
+    const items = await db
+      .select()
+      .from(inventoryItems)
+      .where(eq(inventoryItems.isInInventory, true))
+      .orderBy(desc(inventoryItems.createdAt));
+    return items;
+  }
+
+  async updateInventoryItem(id: number, item: Partial<InsertInventoryItem>): Promise<InventoryItem | undefined> {
+    const [updatedItem] = await db
+      .update(inventoryItems)
+      .set(item)
+      .where(eq(inventoryItems.id, id))
+      .returning();
+    return updatedItem;
+  }
+
+  async deleteInventoryItem(id: number): Promise<boolean> {
+    // Soft delete by setting isInInventory to false
+    const [updatedItem] = await db
+      .update(inventoryItems)
+      .set({ isInInventory: false })
+      .where(eq(inventoryItems.id, id))
+      .returning();
+    
+    return !!updatedItem;
+  }
+
+  async addReceiptItemsToInventory(receiptId: number): Promise<InventoryItem[]> {
+    // Get receipt items
+    const receiptItems = await this.getReceiptItemsByReceiptId(receiptId);
+    
+    // Filter out non-food items like tax, fees, etc.
+    const foodItems = receiptItems.filter(item => {
+      const category = item.category?.toLowerCase() || '';
+      return !['tax', 'fee', 'deposit', 'total', 'subtotal'].includes(category);
+    });
+    
+    // Add each item to inventory
+    const inventoryItemsPromises = foodItems.map(item => {
+      // Default expiry date to 7 days from now for perishables, null for non-perishables
+      const expiryDate = this.getDefaultExpiryDate(item.category || 'Other');
+      
+      return this.createInventoryItem({
+        name: item.name,
+        description: item.description || null,
+        quantity: "1", // Default quantity
+        category: item.category || 'Other',
+        expiryDate,
+        isInInventory: true,
+        sourceReceiptId: receiptId
+      });
+    });
+    
+    return Promise.all(inventoryItemsPromises);
+  }
+  
+  private getDefaultExpiryDate(category: string): Date | null {
+    // Simple logic to set default expiry dates based on category
+    const lowerCategory = category.toLowerCase();
+    const now = new Date();
+    
+    if (['produce', 'fruit', 'vegetable', 'vegetables', 'dairy', 'meat', 'seafood'].some(c => lowerCategory.includes(c))) {
+      // Perishables: 7 days
+      const expiry = new Date(now);
+      expiry.setDate(expiry.getDate() + 7);
+      return expiry;
+    } else if (['bakery', 'bread'].some(c => lowerCategory.includes(c))) {
+      // Bakery: 3 days
+      const expiry = new Date(now);
+      expiry.setDate(expiry.getDate() + 3);
+      return expiry;
+    } else if (['frozen'].some(c => lowerCategory.includes(c))) {
+      // Frozen: 90 days
+      const expiry = new Date(now);
+      expiry.setDate(expiry.getDate() + 90);
+      return expiry;
+    }
+    
+    // Non-perishables, unknown categories: no expiry
+    return null;
+  }
+
+  // Dietary preferences/meal types
+  async getDietaryPreferences(): Promise<DietaryPreference[]> {
+    return db.select().from(dietaryPreferences);
+  }
+
+  async getMealTypes(): Promise<MealType[]> {
+    return db.select().from(mealTypes);
+  }
+
+  async createDietaryPreference(pref: InsertDietaryPreference): Promise<DietaryPreference> {
+    const [created] = await db
+      .insert(dietaryPreferences)
+      .values(pref)
+      .returning();
+    return created;
+  }
+
+  async createMealType(type: InsertMealType): Promise<MealType> {
+    const [created] = await db
+      .insert(mealTypes)
+      .values(type)
+      .returning();
+    return created;
+  }
+
+  // Recipe methods
+  async createRecipe(
+    recipe: InsertRecipe, 
+    ingredients: InsertRecipeIngredient[], 
+    dietaryRestrictionIds: number[]
+  ): Promise<Recipe> {
+    // Create recipe
+    const [createdRecipe] = await db
+      .insert(recipes)
+      .values(recipe)
+      .returning();
+    
+    // Add ingredients
+    await Promise.all(
+      ingredients.map(ingredient => 
+        db.insert(recipeIngredients).values({
+          ...ingredient,
+          recipeId: createdRecipe.id,
+        })
+      )
+    );
+    
+    // Add dietary restrictions
+    if (dietaryRestrictionIds.length > 0) {
+      await Promise.all(
+        dietaryRestrictionIds.map(dietaryPreferenceId => 
+          db.insert(recipeDietaryRestrictions).values({
+            recipeId: createdRecipe.id,
+            dietaryPreferenceId,
+          })
+        )
+      );
+    }
+    
+    return createdRecipe;
+  }
+
+  async getRecipes(filters?: {
+    mealTypeId?: number;
+    dietaryRestrictions?: number[];
+    searchTerm?: string;
+    inventoryBased?: boolean;
+  }): Promise<Recipe[]> {
+    let query = db.select().from(recipes);
+    
+    // Apply filters
+    if (filters) {
+      if (filters.mealTypeId) {
+        query = query.where(eq(recipes.mealTypeId, filters.mealTypeId));
+      }
+      
+      if (filters.dietaryRestrictions && filters.dietaryRestrictions.length > 0) {
+        // Join with dietary restrictions to filter
+        const subquery = db.select({ id: recipeDietaryRestrictions.recipeId })
+          .from(recipeDietaryRestrictions)
+          .where(inArray(recipeDietaryRestrictions.dietaryPreferenceId, filters.dietaryRestrictions))
+          .groupBy(recipeDietaryRestrictions.recipeId)
+          .having({ count: sql`count(*)`.gte(filters.dietaryRestrictions.length) });
+        
+        query = query.where(inArray(recipes.id, subquery));
+      }
+      
+      if (filters.searchTerm) {
+        const searchTerm = `%${filters.searchTerm}%`;
+        query = query.where(like(recipes.title, searchTerm));
+      }
+      
+      if (filters.inventoryBased) {
+        // Get inventory items
+        const inventoryItemNames = await db
+          .select({ name: inventoryItems.name })
+          .from(inventoryItems)
+          .where(eq(inventoryItems.isInInventory, true));
+        
+        if (inventoryItemNames.length > 0) {
+          // Find recipes where at least some ingredients match inventory
+          const ingredientNames = inventoryItemNames.map(item => item.name.toLowerCase());
+          
+          // This is a simplified match based on item names
+          // In a real app, this would be more sophisticated with proper ingredient matching
+          const recipeIdsWithMatchingIngredients = await db
+            .select({ recipeId: recipeIngredients.recipeId })
+            .from(recipeIngredients)
+            .where(
+              sql`lower(${recipeIngredients.name}) in (${ingredientNames.join(',')})`
+            )
+            .groupBy(recipeIngredients.recipeId);
+          
+          if (recipeIdsWithMatchingIngredients.length > 0) {
+            query = query.where(
+              inArray(
+                recipes.id, 
+                recipeIdsWithMatchingIngredients.map(r => r.recipeId)
+              )
+            );
+          }
+        }
+      }
+    }
+    
+    return query.orderBy(desc(recipes.createdAt));
+  }
+
+  async getRecipeById(id: number): Promise<RecipeFull | undefined> {
+    const recipe = await db
+      .select()
+      .from(recipes)
+      .where(eq(recipes.id, id))
+      .limit(1);
+    
+    if (recipe.length === 0) {
+      return undefined;
+    }
+    
+    const [recipeData] = recipe;
+    
+    // Get meal type
+    let mealType = null;
+    if (recipeData.mealTypeId) {
+      const [mealTypeData] = await db
+        .select()
+        .from(mealTypes)
+        .where(eq(mealTypes.id, recipeData.mealTypeId));
+      
+      if (mealTypeData) {
+        mealType = {
+          id: mealTypeData.id,
+          name: mealTypeData.name,
+        };
+      }
+    }
+    
+    // Get ingredients
+    const ingredients = await db
+      .select()
+      .from(recipeIngredients)
+      .where(eq(recipeIngredients.recipeId, id));
+    
+    // Get dietary restrictions
+    const dietaryRestrictionsJoins = await db
+      .select({
+        id: dietaryPreferences.id,
+        name: dietaryPreferences.name,
+      })
+      .from(recipeDietaryRestrictions)
+      .innerJoin(
+        dietaryPreferences,
+        eq(recipeDietaryRestrictions.dietaryPreferenceId, dietaryPreferences.id)
+      )
+      .where(eq(recipeDietaryRestrictions.recipeId, id));
+    
+    return {
+      id: recipeData.id,
+      title: recipeData.title,
+      instructions: recipeData.instructions,
+      prepTime: recipeData.prepTime,
+      cookTime: recipeData.cookTime,
+      servings: recipeData.servings,
+      calories: recipeData.calories,
+      imageUrl: recipeData.imageUrl,
+      mealType,
+      ingredients,
+      dietaryRestrictions: dietaryRestrictionsJoins,
+    };
+  }
+
+  async getRandomRecipe(filters?: {
+    mealTypeId?: number;
+    dietaryRestrictions?: number[];
+    inventoryBased?: boolean;
+  }): Promise<RecipeFull | undefined> {
+    const recipes = await this.getRecipes(filters);
+    
+    if (recipes.length === 0) {
+      return undefined;
+    }
+    
+    // Select a random recipe
+    const randomIndex = Math.floor(Math.random() * recipes.length);
+    const randomRecipe = recipes[randomIndex];
+    
+    // Get full recipe details
+    return this.getRecipeById(randomRecipe.id);
   }
 }
 
