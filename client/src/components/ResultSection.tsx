@@ -2,17 +2,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { type ReceiptItemResponse } from "@shared/schema";
+import { ShoppingBasket } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface ResultSectionProps {
   items: ReceiptItemResponse[];
   onNewUpload: () => void;
   onSaveResults: () => void;
+  onAddToInventory?: () => void;
 }
 
 export default function ResultSection({ 
   items, 
   onNewUpload,
-  onSaveResults
+  onSaveResults,
+  onAddToInventory
 }: ResultSectionProps) {
   // Format currency for display with the same symbol as in the first item
   const currencySymbol = items.length > 0 ? 
@@ -109,7 +113,7 @@ export default function ResultSection({
         </CardFooter>
       </Card>
       
-      <div className="mt-6 flex space-x-3 justify-center">
+      <div className="mt-6 flex flex-wrap space-x-3 justify-center">
         <Button 
           variant="outline" 
           className="border-gray-300 text-gray-700" 
@@ -123,6 +127,22 @@ export default function ResultSection({
         >
           Save Results
         </Button>
+        {onAddToInventory && (
+          <Button 
+            variant="outline"
+            className="bg-green-50 border-green-300 text-green-700 hover:bg-green-100 mt-3 sm:mt-0"
+            onClick={() => {
+              onAddToInventory();
+              toast({
+                title: "Added to inventory",
+                description: "Food items from this receipt have been added to your inventory",
+              });
+            }}
+          >
+            <ShoppingBasket className="mr-2 h-4 w-4" />
+            Add to Inventory
+          </Button>
+        )}
       </div>
     </div>
   );

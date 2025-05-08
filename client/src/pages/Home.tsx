@@ -6,7 +6,7 @@ import ErrorState from "@/components/ErrorState";
 import ResultSection from "@/components/ResultSection";
 import { HeroSection } from "@/components/ui/hero-section";
 import { useToast } from "@/hooks/use-toast";
-import { analyzeReceipt, saveReceiptItems } from "@/lib/api";
+import { analyzeReceipt, saveReceiptItems, addReceiptToInventory } from "@/lib/api";
 import { type ReceiptItemResponse } from "@shared/schema";
 
 type AppState = "upload" | "loading" | "error" | "preview" | "results";
@@ -49,7 +49,8 @@ export default function Home() {
 
   const handleSaveResults = async () => {
     try {
-      await saveReceiptItems(items);
+      const receipt = await saveReceiptItems(items);
+      setReceiptId(receipt.id);
       toast({
         title: "Saved Successfully",
         description: "Receipt data has been saved",
@@ -61,6 +62,40 @@ export default function Home() {
         description: err instanceof Error ? err.message : "Failed to save receipt items",
         variant: "destructive",
       });
+    }
+  };
+  
+  const [receiptId, setReceiptId] = useState<number | null>(null);
+  
+  const handleAddToInventory = async () => {
+    if (!receiptId) {
+      // If receipt isn't saved yet, save it first
+      try {
+        const receipt = await saveReceiptItems(items);
+        setReceiptId(receipt.id);
+        
+        // Then add to inventory
+        await addReceiptToInventory(receipt.id);
+      } catch (err) {
+        console.error("Error adding receipt to inventory:", err);
+        toast({
+          title: "Failed to Add to Inventory",
+          description: err instanceof Error ? err.message : "An error occurred adding items to inventory",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // Receipt already saved, just add to inventory
+      try {
+        await addReceiptToInventory(receiptId);
+      } catch (err) {
+        console.error("Error adding receipt to inventory:", err);
+        toast({
+          title: "Failed to Add to Inventory",
+          description: err instanceof Error ? err.message : "An error occurred adding items to inventory",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -142,6 +177,7 @@ export default function Home() {
             items={items} 
             onNewUpload={handleRetry}
             onSaveResults={handleSaveResults}
+            onAddToInventory={handleAddToInventory}
           />
         </div>
       )}
