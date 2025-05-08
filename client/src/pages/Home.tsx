@@ -123,6 +123,10 @@ export default function Home() {
               items={items} 
               onNewUpload={handleRetry}
               onSaveResults={handleSaveResults}
+              askForTotalAmount={!items.some(item => 
+                item.category === 'Total' || 
+                ['TOTAL', 'AMOUNT', 'PAYMENT'].includes(item.name.toUpperCase())
+              )}
             />
           )}
         </main>
