@@ -35,7 +35,7 @@ export function Navbar() {
   }, []);
 
   const navItems = [
-    { name: "Dashboard", href: "/dashboard", icon: BarChart3Icon },
+    { name: "Dashboard", href: "/", icon: BarChart3Icon },
     { name: "Recipes", href: "/recipes", icon: UtensilsCrossedIcon },
     { name: "Receipts", href: "/receipts", icon: ReceiptIcon },
     { name: "Inventory", href: "/inventory", icon: ShoppingBasketIcon },
@@ -45,7 +45,7 @@ export function Navbar() {
     <div className="sticky top-0 z-40 w-full border-b border-border/40 bg-white/80 backdrop-blur-md">
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
         {/* Logo */}
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <div className="flex items-center gap-2 cursor-pointer">
             <div className="relative h-8 w-8 overflow-hidden rounded-md flex items-center justify-center bg-gradient text-white">
               <UtensilsCrossedIcon className="h-5 w-5" />
@@ -60,7 +60,7 @@ export function Navbar() {
         <nav className="hidden md:flex items-center space-x-1">
           {navItems.map(({ name, href, icon: Icon }) => {
             const isActive = (
-              href === "/dashboard" && location === "/" ||
+              href === "/" && location === "/" ||
               location === href
             );
             
@@ -168,7 +168,7 @@ export function Navbar() {
               <nav className="flex flex-col space-y-1 mb-8">
                 {navItems.map(({ name, href, icon: Icon }) => {
                   const isActive = (
-                    href === "/dashboard" && location === "/" ||
+                    href === "/" && location === "/" ||
                     location === href
                   );
                   
