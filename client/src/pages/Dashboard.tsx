@@ -114,7 +114,7 @@ export default function Dashboard() {
             <CardContent>
               <div className="text-2xl font-bold">${grandTotal}</div>
               <p className="text-xs text-muted-foreground">
-                From {receipts.length} items
+                From {receiptItems.length} items
               </p>
             </CardContent>
           </Card>
@@ -133,7 +133,7 @@ export default function Dashboard() {
                   ${categoryTotals[category] || "0.00"}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {receipts.filter(i => i.category === category).length} items
+                  {receiptItems.filter(i => i.category === category).length} items
                 </p>
               </CardContent>
             </Card>
@@ -182,7 +182,7 @@ export default function Dashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredReceipts.map((item, index) => (
+                      {filteredReceiptItems.map((item: ReceiptItemResponse, index: number) => (
                         <tr key={index} className="border-b transition-colors hover:bg-muted/50">
                           <td className="p-4 align-middle">{item.name}</td>
                           <td className="p-4 align-middle">
