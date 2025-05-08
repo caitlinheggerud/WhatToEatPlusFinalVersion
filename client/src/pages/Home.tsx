@@ -103,7 +103,7 @@ export default function Home() {
       {/* Preview State */}
       {state === "preview" && (
         <div className="container max-w-md mx-auto px-4 py-8">
-          <h2 className="text-xl font-semibold mb-4 text-center">确认收据图片</h2>
+          <h2 className="text-xl font-semibold mb-4 text-center">Confirm Receipt Image</h2>
           <ImagePreview 
             imageUrl={imagePreview!} 
             onRemove={handleRemoveImage}
@@ -114,7 +114,7 @@ export default function Home() {
               onClick={handleAnalyze}
               className="btn-gradient py-2 px-4 rounded-md shadow-sm flex items-center justify-center"
             >
-              分析图片
+              Analyze Image
             </button>
           </div>
         </div>

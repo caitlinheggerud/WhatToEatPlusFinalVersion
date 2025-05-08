@@ -5,9 +5,9 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 pb-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">支出分析</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Expense Analysis</h1>
         <p className="text-muted-foreground">
-          查看您的消费趋势和支出分类统计。
+          View your spending trends and expense category statistics.
         </p>
       </div>
       
@@ -15,14 +15,14 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              本月支出
+              Monthly Expenses
             </CardTitle>
             <ReceiptIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">¥1,254.89</div>
+            <div className="text-2xl font-bold">$1,254.89</div>
             <p className="text-xs text-muted-foreground">
-              较上月 <span className="text-green-500">-12.5%</span>
+              vs last month <span className="text-green-500">-12.5%</span>
             </p>
           </CardContent>
         </Card>
@@ -30,14 +30,14 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              已分析收据
+              Receipts Analyzed
             </CardTitle>
             <BarChart3Icon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">24</div>
             <p className="text-xs text-muted-foreground">
-              本月新增 <span className="text-indigo-500">+8</span>
+              +8 this month <span className="text-indigo-500">+50%</span>
             </p>
           </CardContent>
         </Card>
@@ -45,14 +45,14 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              最大消费类别
+              Top Expense Category
             </CardTitle>
             <PieChartIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">餐饮</div>
+            <div className="text-2xl font-bold">Dining</div>
             <p className="text-xs text-muted-foreground">
-              占总支出 <span className="text-orange-500">38%</span>
+              of total expenses <span className="text-orange-500">38%</span>
             </p>
           </CardContent>
         </Card>
@@ -60,14 +60,14 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              平均每日支出
+              Average Daily Spending
             </CardTitle>
             <CalendarIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">¥42.46</div>
+            <div className="text-2xl font-bold">$42.46</div>
             <p className="text-xs text-muted-foreground">
-              较上月 <span className="text-green-500">-5.2%</span>
+              vs last month <span className="text-green-500">-5.2%</span>
             </p>
           </CardContent>
         </Card>
@@ -76,13 +76,13 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
-            <CardTitle>月度支出趋势</CardTitle>
+            <CardTitle>Monthly Spending Trends</CardTitle>
           </CardHeader>
           <CardContent className="h-[300px] flex items-center justify-center">
             <div className="text-muted-foreground text-center p-8">
               <BarChart3Icon className="h-10 w-10 mx-auto mb-3 text-muted" />
-              <p>图表将在您添加更多收据后显示</p>
-              <p className="text-sm mt-1 text-muted">完成至少5张收据的扫描</p>
+              <p>Chart will display after adding more receipts</p>
+              <p className="text-sm mt-1 text-muted">Complete at least 5 receipt scans</p>
             </div>
           </CardContent>
         </Card>

@@ -12,11 +12,11 @@ export function HeroSection({ onScanClick }: HeroSectionProps) {
       <div className="relative z-10">
         <div className="max-w-2xl">
           <h1 className="text-3xl font-bold text-white sm:text-4xl md:text-5xl">
-            智能收据扫描与支出分析
+            Intelligent Receipt Scanner & Expense Tracker
           </h1>
           <p className="mt-4 text-lg text-white/90 md:text-xl">
-            简单上传您的收据照片，我们的AI将自动识别商品、价格和分类，
-            帮助您追踪和分析消费习惯。
+            Simply upload your receipt photos and our AI will automatically recognize items, 
+            prices, and categories to help you track and analyze your spending habits.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Button 
@@ -25,7 +25,7 @@ export function HeroSection({ onScanClick }: HeroSectionProps) {
               className="bg-white text-primary hover:bg-white/90"
             >
               <ReceiptIcon className="mr-2 h-5 w-5" />
-              开始扫描
+              Start Scanning
             </Button>
             <Link href="/dashboard">
               <div>
@@ -35,7 +35,7 @@ export function HeroSection({ onScanClick }: HeroSectionProps) {
                   className="border-white text-white hover:bg-white/10"
                 >
                   <BarChart3 className="mr-2 h-5 w-5" />
-                  查看报表
+                  View Reports
                 </Button>
               </div>
             </Link>

@@ -75,7 +75,7 @@ export default function UploadSection({
       </div>
       
       <div className="mt-2 text-xs text-muted-foreground text-center">
-        收据将使用Google Gemini API进行分析处理
+        Receipts will be processed using Google Gemini API
       </div>
       
       {showAnalyzeButton && (
@@ -85,7 +85,7 @@ export default function UploadSection({
             onClick={onAnalyze}
           >
             <ImageIcon className="mr-2 h-4 w-4" />
-            分析收据
+            Analyze Receipt
           </Button>
         </div>
       )}
