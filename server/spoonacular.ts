@@ -8,7 +8,7 @@ if (!API_KEY) {
 }
 
 // Search recipes
-export async function searchRecipes(query: string, diet?: string, mealType?: string, maxReadyTime?: number): Promise<any> {
+export async function searchRecipes(query: string, diet?: string, mealType?: string, maxReadyTime?: number, intolerances?: string): Promise<any> {
   try {
     const params = new URLSearchParams({
       apiKey: API_KEY as string,
@@ -21,6 +21,7 @@ export async function searchRecipes(query: string, diet?: string, mealType?: str
     if (diet) params.append('diet', diet);
     if (mealType) params.append('type', mealType);
     if (maxReadyTime) params.append('maxReadyTime', maxReadyTime.toString());
+    if (intolerances) params.append('intolerances', intolerances);
     
     const response = await fetch(`${BASE_URL}/recipes/complexSearch?${params.toString()}`);
     
@@ -36,7 +37,7 @@ export async function searchRecipes(query: string, diet?: string, mealType?: str
 }
 
 // Get random recipes
-export async function getRandomRecipes(tags?: string[], number: number = 3): Promise<any> {
+export async function getRandomRecipes(tags?: string[], number: number = 3, intolerances?: string): Promise<any> {
   try {
     const params = new URLSearchParams({
       apiKey: API_KEY as string,
@@ -47,6 +48,10 @@ export async function getRandomRecipes(tags?: string[], number: number = 3): Pro
     
     if (tags && tags.length > 0) {
       params.append('tags', tags.join(','));
+    }
+    
+    if (intolerances) {
+      params.append('intolerances', intolerances);
     }
     
     const response = await fetch(`${BASE_URL}/recipes/random?${params.toString()}`);
