@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ReceiptIcon, BarChart3Icon } from "lucide-react";
+import { ReceiptIcon, BarChart3Icon, ShoppingBasketIcon, UtensilsCrossedIcon } from "lucide-react";
 
 export function Navbar() {
   return (
@@ -9,7 +9,7 @@ export function Navbar() {
           <div className="flex items-center gap-2 cursor-pointer">
             <ReceiptIcon className="h-6 w-6 text-primary" />
             <span className="text-xl font-semibold">
-              Receipt Scanner
+              WhatToEat+
             </span>
           </div>
         </Link>
@@ -19,6 +19,18 @@ export function Navbar() {
         <Link href="/">
           <span className="text-sm font-medium transition-colors hover:text-primary cursor-pointer">
             Home
+          </span>
+        </Link>
+        <Link href="/inventory">
+          <span className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary cursor-pointer flex items-center">
+            <ShoppingBasketIcon className="h-4 w-4 mr-1" />
+            Inventory
+          </span>
+        </Link>
+        <Link href="/recipes">
+          <span className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary cursor-pointer flex items-center">
+            <UtensilsCrossedIcon className="h-4 w-4 mr-1" />
+            Recipes
           </span>
         </Link>
         <Link href="/dashboard">
