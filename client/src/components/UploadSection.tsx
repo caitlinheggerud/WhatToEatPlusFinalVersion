@@ -61,7 +61,7 @@ export default function UploadSection({
         </div>
         <p className="text-lg font-medium mb-2">Upload Receipt Image</p>
         <p className="text-sm text-muted-foreground mb-4">Click or drag and drop to upload</p>
-        <Button className="bg-primary hover:bg-primary/90">
+        <Button className="bg-gradient hover:bg-gradient/90">
           <Upload className="mr-2 h-4 w-4" />
           Select Image
         </Button>

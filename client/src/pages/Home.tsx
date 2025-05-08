@@ -145,7 +145,7 @@ export default function Home() {
           <div className="flex justify-center">
             <button 
               onClick={handleAnalyze}
-              className="btn-gradient py-2 px-4 rounded-md shadow-sm flex items-center justify-center"
+              className="bg-gradient py-2 px-4 rounded-md shadow-sm flex items-center justify-center text-white font-medium"
             >
               Analyze Image
             </button>

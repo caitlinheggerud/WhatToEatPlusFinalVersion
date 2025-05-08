@@ -7,6 +7,7 @@ import { PlusIcon, ShoppingBagIcon, ArrowRightIcon, FileTextIcon, TagIcon, Calen
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
+import { useLocation } from "wouter";
 
 // Define Receipt type based on API response
 interface Receipt {
@@ -30,6 +31,9 @@ export default function Receipts() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [addingToInventory, setAddingToInventory] = useState(false);
   const { toast } = useToast();
+  
+  // Use location for navigation
+  const [, navigate] = useLocation();
 
   useEffect(() => {
     async function fetchReceipts() {
@@ -114,7 +118,10 @@ export default function Receipts() {
             Browse and manage your shopping receipts
           </p>
         </div>
-        <Button className="bg-gradient">
+        <Button 
+          className="bg-gradient"
+          onClick={() => navigate('/')}
+        >
           <PlusIcon className="mr-2 h-4 w-4" />
           Upload Receipt
         </Button>
@@ -187,7 +194,10 @@ export default function Receipts() {
                   <p className="text-muted-foreground text-sm mt-1 mb-4">
                     Upload your first shopping receipt to get started
                   </p>
-                  <Button className="bg-gradient">
+                  <Button 
+                    className="bg-gradient"
+                    onClick={() => navigate('/')}
+                  >
                     <PlusIcon className="mr-2 h-4 w-4" />
                     Upload Receipt
                   </Button>
