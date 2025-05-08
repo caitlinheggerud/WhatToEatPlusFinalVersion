@@ -1,29 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 40 33% 98%;
+    --foreground: 220 20% 20%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 220 20% 20%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 238 78% 53%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 238 78% 53%;
-    --radius: 0.5rem;
+    --popover-foreground: 220 20% 20%;
+    --primary: 142 76% 36%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 160 50% 96%;
+    --secondary-foreground: 142 76% 36%;
+    --muted: 40 40% 96%;
+    --muted-foreground: 220 10% 46%;
+    --accent: 30 50% 96%;
+    --accent-foreground: 30 80% 40%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 142 76% 36%;
+    --radius: 0.75rem;
   }
  
   .dark {
@@ -59,23 +61,80 @@
 }
 
 .bg-gradient {
-  background: linear-gradient(120deg, #4c6ef5 0%, #7c3aed 100%);
+  background: linear-gradient(120deg, #34d399 0%, #10b981 100%);
 }
 
 .text-gradient {
-  background: linear-gradient(90deg, #4c6ef5, #7c3aed);
+  background: linear-gradient(90deg, #34d399, #10b981);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .btn-gradient {
-  background: linear-gradient(90deg, #4c6ef5, #7c3aed);
+  background: linear-gradient(90deg, #34d399, #10b981);
   color: white;
   transition: all 0.3s ease;
 }
 
 .btn-gradient:hover {
-  background: linear-gradient(90deg, #4361d3, #6a33cd);
-  box-shadow: 0 4px 14px rgba(76, 110, 245, 0.4);
+  background: linear-gradient(90deg, #2ebb89, #0ea676);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+}
+
+/* Updated global styles */
+body {
+  font-family: 'Inter', sans-serif;
+  background-image: linear-gradient(to bottom right, rgba(52, 211, 153, 0.05), rgba(255, 255, 255, 0.9), rgba(243, 244, 246, 0.1));
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* Card hover effects */
+.hover-card {
+  transition: all 0.3s ease;
+}
+
+.hover-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+/* Recipe card image */
+.recipe-image {
+  height: 220px;
+  object-fit: cover;
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+  width: 100%;
+}
+
+/* App header */
+.app-header {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.app-title {
+  font-weight: 700;
+  font-size: 1.75rem;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.025em;
+}
+
+/* Button styles */
+.btn {
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
 }
