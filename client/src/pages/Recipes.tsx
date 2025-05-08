@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { DashboardLayout } from "@/components/layout/Dashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -189,7 +188,13 @@ function Recipes() {
       </CardContent>
       
       <CardFooter className="pt-0">
-        <Button className="w-full bg-gradient hover:shadow-md transition-all">
+        <Button 
+          className="w-full bg-gradient hover:shadow-md transition-all"
+          onClick={() => {
+            // Open the recipe in a modal or redirect to a dedicated page
+            window.open(recipe.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(recipe.title)}+recipe`, '_blank');
+          }}
+        >
           View Recipe
         </Button>
       </CardFooter>
@@ -197,11 +202,17 @@ function Recipes() {
   );
 
   return (
-    <DashboardLayout>
-      <div className="max-w-6xl mx-auto mb-8">
-        <h1 className="app-title mb-2 text-center">WhatToEat+</h1>
-        <p className="text-center text-muted-foreground mb-8">Find delicious recipes based on your ingredients and preferences</p>
+    <div className="py-6 space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-gradient">Recipes</h1>
+          <p className="text-muted-foreground mt-1">
+            Find delicious recipes based on your ingredients and preferences
+          </p>
+        </div>
+      </div>
       
+      <div className="max-w-6xl mx-auto mb-8">
         <Card className="mb-6 hover-card shadow-sm border border-border/60">
           <CardHeader className="pb-2">
             <CardTitle className="text-xl">Find Your Perfect Recipe</CardTitle>
@@ -421,7 +432,7 @@ function Recipes() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </div>
   );
 }
 
