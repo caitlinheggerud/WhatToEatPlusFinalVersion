@@ -38,7 +38,7 @@ export type ReceiptItem = typeof receiptItems.$inferSelect;
 export const receiptItemsResponseSchema = z.array(
   z.object({
     name: z.string(),
-    description: z.string().optional(),
+    description: z.string().nullable().optional(),
     price: z.string()
   })
 );

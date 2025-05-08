@@ -45,7 +45,7 @@ const upload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configure Gemini API
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-04-17" });
 
   // Receipt image upload and analysis endpoint
   app.post(
