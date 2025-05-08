@@ -112,10 +112,16 @@ export async function getRecipes(params: {
   dietaryRestrictions?: number[];
   searchTerm?: string;
   inventoryBased?: boolean;
+  servings?: number;
+  useApi?: boolean;
 }): Promise<any> {
   const searchParams = new URLSearchParams();
   
-  if (params.mealTypeId && params.mealTypeId !== 'all') {
+  // Set default value for useApi to true
+  const useApi = params.useApi !== undefined ? params.useApi : true;
+  searchParams.append('useApi', useApi.toString());
+  
+  if (params.mealTypeId) {
     searchParams.append('mealTypeId', params.mealTypeId.toString());
   }
   
@@ -131,6 +137,10 @@ export async function getRecipes(params: {
     searchParams.append('inventoryBased', 'true');
   }
   
+  if (params.servings) {
+    searchParams.append('servings', params.servings.toString());
+  }
+  
   const response = await apiRequest('GET', `/api/recipes?${searchParams.toString()}`);
   return await response.json();
 }
@@ -142,10 +152,15 @@ export async function getRandomRecipe(params: {
   mealTypeId?: number | string;
   dietaryRestrictions?: number[];
   inventoryBased?: boolean;
+  useApi?: boolean;
 }): Promise<any> {
   const searchParams = new URLSearchParams();
   
-  if (params.mealTypeId && params.mealTypeId !== 'all') {
+  // Set default value for useApi to true
+  const useApi = params.useApi !== undefined ? params.useApi : true;
+  searchParams.append('useApi', useApi.toString());
+  
+  if (params.mealTypeId) {
     searchParams.append('mealTypeId', params.mealTypeId.toString());
   }
   
