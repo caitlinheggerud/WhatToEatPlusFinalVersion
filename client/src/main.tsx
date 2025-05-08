@@ -26,8 +26,13 @@ ogType.setAttribute('property', 'og:type');
 ogType.content = 'website';
 document.head.appendChild(ogType);
 
+// Before rendering, remove any dark mode classes that might be added
+if (document.documentElement.classList.contains('dark')) {
+  document.documentElement.classList.remove('dark');
+}
+
 createRoot(document.getElementById("root")!).render(
-  <ThemeProvider attribute="class">
+  <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light">
     <App />
   </ThemeProvider>
 );

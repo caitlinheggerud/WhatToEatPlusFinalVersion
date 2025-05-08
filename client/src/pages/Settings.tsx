@@ -32,23 +32,10 @@ function Settings() {
     // Check if dark mode setting exists in localStorage
     const darkModeSetting = localStorage.getItem(STORAGE_KEYS.DARK_MODE);
     
-    // If no setting exists, explicitly set to light mode (false)
-    if (darkModeSetting === null) {
-      localStorage.setItem(STORAGE_KEYS.DARK_MODE, 'false');
-      document.documentElement.classList.remove('dark');
-      setDarkMode(false);
-    } else {
-      // Otherwise use the stored setting
-      const savedDarkMode = darkModeSetting === 'true';
-      setDarkMode(savedDarkMode);
-      
-      // Apply dark mode class if needed
-      if (savedDarkMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    }
+    // Force light mode on initial load, regardless of previous setting
+    localStorage.setItem(STORAGE_KEYS.DARK_MODE, 'false');
+    document.documentElement.classList.remove('dark');
+    setDarkMode(false);
     
     // Load other settings from localStorage
     setHighContrast(localStorage.getItem(STORAGE_KEYS.HIGH_CONTRAST) === 'true');
