@@ -256,7 +256,7 @@ function Recipes() {
       
       <div className="flex flex-col flex-grow">
         <CardHeader className="pb-2 pt-4">
-          <CardTitle className="text-xl font-semibold line-clamp-2 flex items-start justify-between group">
+          <CardTitle className="text-xl font-semibold line-clamp-2 h-14 flex items-start justify-between group">
             <span>{recipe.title}</span>
             {recipe.sourceUrl && (
               <a 
@@ -270,7 +270,7 @@ function Recipes() {
             )}
           </CardTitle>
           
-          <CardDescription className="text-sm font-medium text-accent-foreground">
+          <CardDescription className="text-sm font-medium text-accent-foreground h-6">
             {recipe.calories ? (
               <div className="flex items-center gap-1">
                 <span className="font-medium">{Math.round(recipe.calories)}</span> calories per serving
