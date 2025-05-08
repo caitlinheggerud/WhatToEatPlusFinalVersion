@@ -645,29 +645,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return '';
   }
   
-  // Get a single recipe by ID
-  app.get("/api/recipes/:id", async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid recipe ID" });
-      }
-      
-      const recipe = await storage.getRecipeById(id);
-      
-      if (!recipe) {
-        return res.status(404).json({ message: "Recipe not found" });
-      }
-      
-      return res.status(200).json(recipe);
-    } catch (error) {
-      console.error("Error fetching recipe:", error);
-      return res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Unknown error occurred" 
-      });
-    }
-  });
-  
   // Helper function to get a random recipe from local database
   const getLocalRandomRecipe = async (req: Request, res: Response) => {
     const mealTypeId = req.query.mealTypeId && req.query.mealTypeId !== 'all' ? 
@@ -690,11 +667,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.status(200).json(recipe);
   };
 
-  // Get a random recipe
+  // Get a random recipe - IMPORTANT: This route must be defined BEFORE the /:id route
   app.get("/api/recipes/random", async (req: Request, res: Response) => {
     try {
       // Check if we should use Spoonacular API or local database
-      const useApi = req.query.useApi === 'true' || true; // Default to using API
+      const useApi = req.query.useApi !== 'false'; // Default to using API
       
       if (useApi) {
         // Import the Spoonacular API module
@@ -752,6 +729,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get a single recipe by ID
+  app.get("/api/recipes/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid recipe ID" });
+      }
+      
+      const recipe = await storage.getRecipeById(id);
+      
+      if (!recipe) {
+        return res.status(404).json({ message: "Recipe not found" });
+      }
+      
+      return res.status(200).json(recipe);
+    } catch (error) {
+      console.error("Error fetching recipe:", error);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Unknown error occurred" 
+      });
+    }
+  });
+  
   // DeepAI image enhancement endpoint
   app.post("/api/images/enhance", async (req: Request, res: Response) => {
     try {

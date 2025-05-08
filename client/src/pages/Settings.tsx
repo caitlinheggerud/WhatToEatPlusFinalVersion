@@ -27,19 +27,30 @@ function Settings() {
   const [dataCollection, setDataCollection] = useState(false);
   const [thirdPartySharing, setThirdPartySharing] = useState(false);
 
-  // Load settings from localStorage
+  // Initialize theme settings when component mounts
   useEffect(() => {
-    // Load settings from localStorage
-    const savedDarkMode = localStorage.getItem(STORAGE_KEYS.DARK_MODE) === 'true';
-    setDarkMode(savedDarkMode);
+    // Check if dark mode setting exists in localStorage
+    const darkModeSetting = localStorage.getItem(STORAGE_KEYS.DARK_MODE);
     
-    // Apply dark mode class if needed
-    if (savedDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
+    // If no setting exists, explicitly set to light mode (false)
+    if (darkModeSetting === null) {
+      localStorage.setItem(STORAGE_KEYS.DARK_MODE, 'false');
       document.documentElement.classList.remove('dark');
+      setDarkMode(false);
+    } else {
+      // Otherwise use the stored setting
+      const savedDarkMode = darkModeSetting === 'true';
+      setDarkMode(savedDarkMode);
+      
+      // Apply dark mode class if needed
+      if (savedDarkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     }
     
+    // Load other settings from localStorage
     setHighContrast(localStorage.getItem(STORAGE_KEYS.HIGH_CONTRAST) === 'true');
     setEmailNotifications(localStorage.getItem(STORAGE_KEYS.EMAIL_NOTIFICATIONS) === 'true');
     setPushNotifications(localStorage.getItem(STORAGE_KEYS.PUSH_NOTIFICATIONS) === 'true');
