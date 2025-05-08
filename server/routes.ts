@@ -47,6 +47,10 @@ const upload = multer({
   },
 });
 
+import { db } from './db';
+import { inventoryItems } from '@shared/schema';
+import { eq } from 'drizzle-orm';
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve static images from client/public/images
   app.use('/images', express.static(path.join(process.cwd(), 'client/public/images')));
@@ -600,7 +604,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const apiResponse = await searchRecipes(query, diet, mealTypeString, maxReadyTime, allergies);
           
           // Transform the response to match our app's format using Spoonacular images
-          const recipes = apiResponse.results.map(mapSpoonacularRecipeToAppRecipe);
+          let recipes = apiResponse.results.map(mapSpoonacularRecipeToAppRecipe);
+          
+          // Apply inventory-based filtering for API recipes if enabled
+          const inventoryBased = req.query.inventoryBased === 'true';
+          if (inventoryBased) {
+            // Get inventory items
+            const inventoryItemsData = await db
+              .select({ name: inventoryItems.name })
+              .from(inventoryItems)
+              .where(eq(inventoryItems.isInInventory, true));
+            
+            if (inventoryItemsData.length > 0) {
+              const inventoryItemNames = inventoryItemsData.map((item: { name: string }) => item.name.toLowerCase());
+              console.log("Filtering Spoonacular recipes by inventory items:", inventoryItemNames);
+              
+              // Filter recipes that contain at least one inventory item in their title
+              // This is a simple approximation since we don't have full ingredient lists for API recipes
+              recipes = recipes.filter((recipe: { title: string }) => {
+                const recipeTitle = recipe.title.toLowerCase();
+                
+                // Check if any inventory item is mentioned in the recipe title
+                return inventoryItemNames.some((itemName: string) => 
+                  recipeTitle.includes(itemName) || 
+                  // Also check for singular form if itemName ends with 's'
+                  (itemName.endsWith('s') && recipeTitle.includes(itemName.slice(0, -1)))
+                );
+              });
+              
+              console.log(`Filtered to ${recipes.length} recipes that match inventory items`);
+            }
+          }
           
           return res.status(200).json(recipes);
         } catch (apiError) {
@@ -707,8 +741,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           if (apiResponse.recipes && apiResponse.recipes.length > 0) {
             // Transform the response to match our app's format
-            const recipe = mapSpoonacularRecipeToAppRecipe(apiResponse.recipes[0]);
-            return res.status(200).json(recipe);
+            let recipes = apiResponse.recipes.map(mapSpoonacularRecipeToAppRecipe);
+            
+            // Apply inventory-based filtering for API recipes if enabled
+            const inventoryBased = req.query.inventoryBased === 'true';
+            if (inventoryBased) {
+              // Get inventory items
+              const inventoryItemsData = await db
+                .select({ name: inventoryItems.name })
+                .from(inventoryItems)
+                .where(eq(inventoryItems.isInInventory, true));
+              
+              if (inventoryItemsData.length > 0) {
+                const inventoryItemNames = inventoryItemsData.map(item => item.name.toLowerCase());
+                console.log("Filtering Spoonacular random recipes by inventory items:", inventoryItemNames);
+                
+                // Filter recipes that contain at least one inventory item in their title
+                recipes = recipes.filter(recipe => {
+                  const recipeTitle = recipe.title.toLowerCase();
+                  return inventoryItemNames.some(itemName => 
+                    recipeTitle.includes(itemName) || 
+                    (itemName.endsWith('s') && recipeTitle.includes(itemName.slice(0, -1)))
+                  );
+                });
+                
+                console.log(`Filtered to ${recipes.length} random recipes that match inventory items`);
+                
+                // If no recipes match inventory, fall back to local database
+                if (recipes.length === 0) {
+                  console.log("No Spoonacular recipes match inventory, falling back to local database");
+                  return await getLocalRandomRecipe(req, res);
+                }
+                
+                // Return a random recipe from the filtered list
+                const randomIndex = Math.floor(Math.random() * recipes.length);
+                return res.status(200).json(recipes[randomIndex]);
+              }
+            }
+            
+            // If not inventory-based or no inventory items, just return the first recipe
+            return res.status(200).json(recipes[0]);
           } else {
             console.log("No recipes returned from Spoonacular API, falling back to local database");
             // Fall back to local database
