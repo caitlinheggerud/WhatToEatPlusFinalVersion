@@ -1,51 +1,19 @@
-import { Link, useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
-import { ReceiptIcon, BarChart3Icon, HomeIcon, UploadCloudIcon } from "lucide-react";
+import { Link } from "wouter";
+import { ReceiptIcon } from "lucide-react";
 
 export function Navbar() {
-  const [location] = useLocation();
-  
   return (
-    <div className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b bg-white px-4 sm:px-6">
+    <div className="sticky top-0 z-30 flex h-16 w-full items-center justify-center border-b bg-white px-4 sm:px-6">
       <div className="flex items-center gap-2">
         <Link href="/">
           <div className="flex items-center gap-2 cursor-pointer">
             <ReceiptIcon className="h-6 w-6 text-primary" />
-            <span className="hidden text-xl font-semibold sm:inline-block">
+            <span className="text-xl font-semibold">
               Receipt Scanner
             </span>
           </div>
         </Link>
       </div>
-      
-      <nav className="flex items-center gap-1 sm:gap-2">
-        <Link href="/">
-          <div className={`flex h-10 items-center gap-1 rounded-md px-3 text-sm font-medium transition-colors hover:bg-accent cursor-pointer ${
-            location === "/" ? "bg-accent text-accent-foreground" : "text-muted-foreground"
-          }`}>
-            <HomeIcon className="h-4 w-4" />
-            <span className="hidden sm:inline-block">Home</span>
-          </div>
-        </Link>
-        
-        <Link href="/dashboard">
-          <div className={`flex h-10 items-center gap-1 rounded-md px-3 text-sm font-medium transition-colors hover:bg-accent cursor-pointer ${
-            location === "/dashboard" ? "bg-accent text-accent-foreground" : "text-muted-foreground"
-          }`}>
-            <BarChart3Icon className="h-4 w-4" />
-            <span className="hidden sm:inline-block">Reports</span>
-          </div>
-        </Link>
-        
-        <Link href="/">
-          <div>
-            <Button className="ml-2 flex items-center gap-1" size="sm">
-              <UploadCloudIcon className="h-4 w-4" />
-              <span>Scan</span>
-            </Button>
-          </div>
-        </Link>
-      </nav>
     </div>
   );
 }
