@@ -378,7 +378,7 @@ export default function Dashboard() {
                                 return (
                                 <Cell 
                                   key={`cell-${index}`} 
-                                  fill={colors[category] || `#${Math.floor(Math.random() * 16777215).toString(16)}`}
+                                  fill={category && colors[category as keyof typeof colors] || `#${Math.floor(Math.random() * 16777215).toString(16)}`}
                                   strokeWidth={1}
                                 />
                               )})}
@@ -450,7 +450,7 @@ export default function Dashboard() {
                                 return (
                                 <Cell 
                                   key={`cell-${index}`} 
-                                  fill={colors[category] || `#${Math.floor(Math.random() * 16777215).toString(16)}`}
+                                  fill={category && colors[category as keyof typeof colors] || `#${Math.floor(Math.random() * 16777215).toString(16)}`}
                                 />
                               )})}
                             </Bar>
