@@ -14,11 +14,39 @@ export default function ResultSection({
   onNewUpload,
   onSaveResults
 }: ResultSectionProps) {
-  // Calculate total
-  const total = items.reduce((sum, item) => {
+  // Filter out GST and TOTAL entries for separate display
+  const regularItems = items.filter(item => 
+    item.category !== 'Tax' && item.category !== 'Total' && 
+    !['GST', 'TAX', 'TOTAL', 'AMOUNT', 'PAYMENT'].includes(item.name.toUpperCase())
+  );
+  
+  // Find GST and Total entries
+  const gstItem = items.find(item => 
+    item.category === 'Tax' || 
+    ['GST', 'TAX', 'VAT'].includes(item.name.toUpperCase())
+  );
+  
+  const totalItem = items.find(item => 
+    item.category === 'Total' || 
+    ['TOTAL', 'AMOUNT', 'PAYMENT'].includes(item.name.toUpperCase())
+  );
+  
+  // Calculate subtotal of regular items
+  const subtotal = regularItems.reduce((sum, item) => {
     const priceValue = parseFloat(item.price.replace(/[^\d.-]/g, ''));
     return sum + (isNaN(priceValue) ? 0 : priceValue);
   }, 0);
+  
+  // Get GST amount if present
+  const gstAmount = gstItem ? 
+    parseFloat(gstItem.price.replace(/[^\d.-]/g, '')) : 
+    0;
+  
+  // Get total from totalItem or calculate it
+  const calculatedTotal = subtotal + gstAmount;
+  const displayTotal = totalItem ? 
+    parseFloat(totalItem.price.replace(/[^\d.-]/g, '')) : 
+    calculatedTotal;
   
   // Format currency for display with the same symbol as in the first item
   const currencySymbol = items.length > 0 ? 
@@ -34,7 +62,7 @@ export default function ResultSection({
         
         <CardContent className="p-0">
           <div className="divide-y divide-gray-200">
-            {items.map((item, index) => (
+            {regularItems.map((item, index) => (
               <div key={index} className="p-4 hover:bg-gray-50">
                 <div className="flex justify-between items-start">
                   <div>
@@ -54,11 +82,29 @@ export default function ResultSection({
         </CardContent>
         
         <CardFooter className="p-4 bg-gray-50 border-t border-gray-200">
-          <div className="flex justify-between items-center w-full">
-            <span className="font-medium">Total</span>
-            <span className="font-semibold text-lg">
-              {`${currencySymbol}${total.toFixed(2)}`}
-            </span>
+          <div className="w-full">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">Subtotal</span>
+              <span className="font-medium">
+                {`${currencySymbol}${subtotal.toFixed(2)}`}
+              </span>
+            </div>
+            
+            {gstItem && (
+              <div className="flex justify-between items-center mt-2">
+                <span className="font-medium text-gray-700">{gstItem.name}</span>
+                <span className="font-medium text-gray-700">
+                  {`${currencySymbol}${gstAmount.toFixed(2)}`}
+                </span>
+              </div>
+            )}
+            
+            <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-200">
+              <span className="font-semibold">Total</span>
+              <span className="font-semibold text-lg">
+                {`${currencySymbol}${displayTotal.toFixed(2)}`}
+              </span>
+            </div>
           </div>
         </CardFooter>
       </Card>

@@ -74,10 +74,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           Try to determine the full product name from any abbreviations, and assign an appropriate category based on the item type.
           
+          IMPORTANT: Also identify if there's a GST (Goods and Services Tax) entry on the receipt. If there is, include it as a separate item with the name "GST" or similar tax label found on the receipt, the exact GST amount, and category as "Tax".
+
+          Also extract the TOTAL amount from the receipt if present.
+          
           Format your response as a JSON array like this:
           [
             {"name": "Item Name", "description": "Item Description", "price": "¥10.00", "category": "Food"},
-            {"name": "Another Item", "description": "Another Description", "price": "¥5.50", "category": "Beverage"}
+            {"name": "Another Item", "description": "Another Description", "price": "¥5.50", "category": "Beverage"},
+            {"name": "GST", "description": "Goods and Services Tax", "price": "¥1.55", "category": "Tax"},
+            {"name": "TOTAL", "description": "Total Payment", "price": "¥17.05", "category": "Total"}
           ]
           
           Only include the JSON array in your response, nothing else.
