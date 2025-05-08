@@ -528,23 +528,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get recipes with filtering
+  // Helper function to use local database for recipes
+  const getLocalDatabaseRecipes = async (req: Request, res: Response) => {
+    const mealTypeId = req.query.mealTypeId && req.query.mealTypeId !== 'all' ? 
+      parseInt(req.query.mealTypeId as string) : undefined;
+    const dietaryRestrictions = req.query.dietaryRestrictions ? 
+      (req.query.dietaryRestrictions as string).split(',').map(id => parseInt(id)) : 
+      undefined;
+    const searchTerm = req.query.searchTerm as string | undefined;
+    const inventoryBased = req.query.inventoryBased === 'true';
+    
+    const recipes = await storage.getRecipes({
+      mealTypeId,
+      dietaryRestrictions,
+      searchTerm,
+      inventoryBased
+    });
+    
+    return res.status(200).json(recipes);
+  };
+
   app.get("/api/recipes", async (req: Request, res: Response) => {
     try {
-      const mealTypeId = req.query.mealTypeId ? parseInt(req.query.mealTypeId as string) : undefined;
-      const dietaryRestrictions = req.query.dietaryRestrictions ? 
-        (req.query.dietaryRestrictions as string).split(',').map(id => parseInt(id)) : 
-        undefined;
-      const searchTerm = req.query.searchTerm as string | undefined;
-      const inventoryBased = req.query.inventoryBased === 'true';
+      // Check if we should use Spoonacular API or local database
+      const useApi = req.query.useApi === 'true' || true; // Default to using API
       
-      const recipes = await storage.getRecipes({
-        mealTypeId,
-        dietaryRestrictions,
-        searchTerm,
-        inventoryBased
-      });
+      if (useApi) {
+        // Import the Spoonacular API module
+        const { searchRecipes, mapSpoonacularRecipeToAppRecipe } = await import('./spoonacular');
+        
+        // Extract query parameters
+        const query = (req.query.searchTerm as string) || '';
+        const mealTypeString = req.query.mealTypeId ? 
+          req.query.mealTypeId === 'all' ? '' : getMealTypeForSpoonacular(req.query.mealTypeId as string) : '';
+        
+        // Generate dietary restriction string for Spoonacular
+        const dietaryRestrictions = req.query.dietaryRestrictions ? 
+          (req.query.dietaryRestrictions as string).split(',') : 
+          [];
+        
+        // Map to Spoonacular diet format if needed
+        const diet = dietaryRestrictions.length > 0 ? mapDietaryPreferences(dietaryRestrictions) : undefined;
+        
+        // Get servings as maxReadyTime (as an example parameter)
+        const servings = req.query.servings ? parseInt(req.query.servings as string) : undefined;
+        // For simplicity, let's use servings × 10 as maxReadyTime
+        const maxReadyTime = servings ? servings * 10 : undefined;
+        
+        try {
+          // Call Spoonacular API
+          const apiResponse = await searchRecipes(query, diet, mealTypeString, maxReadyTime);
+          
+          // Transform the response to match our app's format
+          const recipes = apiResponse.results.map(mapSpoonacularRecipeToAppRecipe);
+          
+          return res.status(200).json(recipes);
+        } catch (apiError) {
+          console.error("Error from Spoonacular API:", apiError);
+          
+          // Fallback to local database if API fails
+          console.log("Falling back to local database");
+          return await getLocalDatabaseRecipes(req, res);
+        }
+      } 
       
-      return res.status(200).json(recipes);
+      // If we get here and haven't returned yet, use local database
+      if (!useApi) {
+        return await getLocalDatabaseRecipes(req, res);
+      }
     } catch (error) {
       console.error("Error fetching recipes:", error);
       return res.status(500).json({ 
@@ -552,6 +603,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Helper function to map meal type ID to Spoonacular format
+  function getMealTypeForSpoonacular(mealTypeId: string): string {
+    const id = parseInt(mealTypeId);
+    switch (id) {
+      case 1: return 'breakfast';
+      case 2: return 'lunch';
+      case 3: return 'dinner,main course';
+      case 4: return 'dessert';
+      case 5: return 'snack,appetizer';
+      default: return '';
+    }
+  }
+  
+  // Helper function to map dietary preferences to Spoonacular format
+  function mapDietaryPreferences(dietaryIds: string[]): string {
+    // This would be mapped from your database IDs to Spoonacular values
+    // For now, we'll use a simplified mapping
+    const ids = dietaryIds.map(id => parseInt(id));
+    if (ids.includes(1)) return 'vegetarian';
+    if (ids.includes(2)) return 'vegan';
+    if (ids.includes(3)) return 'gluten free';
+    return '';
+  }
   
   // Get a single recipe by ID
   app.get("/api/recipes/:id", async (req: Request, res: Response) => {
@@ -576,26 +651,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Helper function to get a random recipe from local database
+  const getLocalRandomRecipe = async (req: Request, res: Response) => {
+    const mealTypeId = req.query.mealTypeId && req.query.mealTypeId !== 'all' ? 
+      parseInt(req.query.mealTypeId as string) : undefined;
+    const dietaryRestrictions = req.query.dietaryRestrictions ? 
+      (req.query.dietaryRestrictions as string).split(',').map(id => parseInt(id)) : 
+      undefined;
+    const inventoryBased = req.query.inventoryBased === 'true';
+    
+    const recipe = await storage.getRandomRecipe({
+      mealTypeId,
+      dietaryRestrictions,
+      inventoryBased
+    });
+    
+    if (!recipe) {
+      return res.status(404).json({ message: "No recipes found with the given criteria" });
+    }
+    
+    return res.status(200).json(recipe);
+  };
+
   // Get a random recipe
   app.get("/api/recipes/random", async (req: Request, res: Response) => {
     try {
-      const mealTypeId = req.query.mealTypeId ? parseInt(req.query.mealTypeId as string) : undefined;
-      const dietaryRestrictions = req.query.dietaryRestrictions ? 
-        (req.query.dietaryRestrictions as string).split(',').map(id => parseInt(id)) : 
-        undefined;
-      const inventoryBased = req.query.inventoryBased === 'true';
+      // Check if we should use Spoonacular API or local database
+      const useApi = req.query.useApi === 'true' || true; // Default to using API
       
-      const recipe = await storage.getRandomRecipe({
-        mealTypeId,
-        dietaryRestrictions,
-        inventoryBased
-      });
-      
-      if (!recipe) {
-        return res.status(404).json({ message: "No recipes found with the given criteria" });
+      if (useApi) {
+        // Import the Spoonacular API module
+        const { getRandomRecipes, mapSpoonacularRecipeToAppRecipe } = await import('./spoonacular');
+        
+        // Extract query parameters and convert to spoonacular format
+        const tags: string[] = [];
+        
+        // Add meal type tag if specified
+        if (req.query.mealTypeId && req.query.mealTypeId !== 'all') {
+          const mealTypeTag = getMealTypeForSpoonacular(req.query.mealTypeId as string);
+          if (mealTypeTag) tags.push(mealTypeTag.split(',')[0]); // Just use the first tag option
+        }
+        
+        // Add diet tag if specified
+        if (req.query.dietaryRestrictions) {
+          const dietaryRestrictions = (req.query.dietaryRestrictions as string).split(',');
+          const dietTag = mapDietaryPreferences(dietaryRestrictions);
+          if (dietTag) tags.push(dietTag);
+        }
+        
+        try {
+          // Get a single random recipe from Spoonacular
+          const apiResponse = await getRandomRecipes(tags, 1);
+          
+          if (apiResponse.recipes && apiResponse.recipes.length > 0) {
+            // Transform the response to match our app's format
+            const recipe = mapSpoonacularRecipeToAppRecipe(apiResponse.recipes[0]);
+            return res.status(200).json(recipe);
+          } else {
+            console.log("No recipes returned from Spoonacular API, falling back to local database");
+            // Fall back to local database
+            return await getLocalRandomRecipe(req, res);
+          }
+        } catch (apiError) {
+          console.error("Error from Spoonacular API:", apiError);
+          // Fallback to local database if API fails
+          console.log("Falling back to local database");
+          return await getLocalRandomRecipe(req, res);
+        }
+      } else {
+        // Use local database if not using API
+        return await getLocalRandomRecipe(req, res);
       }
-      
-      return res.status(200).json(recipe);
     } catch (error) {
       console.error("Error fetching random recipe:", error);
       return res.status(500).json({ 
