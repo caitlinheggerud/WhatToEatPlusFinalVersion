@@ -42,6 +42,9 @@ export default function ResultSection({
                     {item.description && (
                       <p className="text-sm text-gray-500">{item.description}</p>
                     )}
+                    {item.category && (
+                      <p className="text-xs px-2 py-1 mt-1 inline-block rounded-full bg-indigo-50 text-indigo-700">{item.category}</p>
+                    )}
                   </div>
                   <div className="font-medium text-gray-900">{item.price}</div>
                 </div>

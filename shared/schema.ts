@@ -23,6 +23,7 @@ export const receiptItems = pgTable("receipt_items", {
   name: text("name").notNull(),
   description: text("description"),
   price: numeric("price").notNull(),
+  category: text("category"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -39,7 +40,8 @@ export const receiptItemsResponseSchema = z.array(
   z.object({
     name: z.string(),
     description: z.string().nullable().optional(),
-    price: z.string()
+    price: z.string(),
+    category: z.string().optional()
   })
 );
 

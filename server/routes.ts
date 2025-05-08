@@ -70,11 +70,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           1. Name (product name)
           2. Description (if available, like brand, size, etc.)
           3. Price (including currency symbol if present)
+          4. Category (classify the item into one of these categories: Food, Beverage, Household, Clothing, Electronics, Personal Care, Others)
+          
+          Try to determine the full product name from any abbreviations, and assign an appropriate category based on the item type.
           
           Format your response as a JSON array like this:
           [
-            {"name": "Item Name", "description": "Item Description", "price": "¥10.00"},
-            {"name": "Another Item", "description": "Another Description", "price": "¥5.50"}
+            {"name": "Item Name", "description": "Item Description", "price": "¥10.00", "category": "Food"},
+            {"name": "Another Item", "description": "Another Description", "price": "¥5.50", "category": "Beverage"}
           ]
           
           Only include the JSON array in your response, nothing else.
@@ -164,7 +167,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const validatedItem = insertReceiptItemSchema.parse({
             name: itemData.name,
             description: itemData.description || null,
-            price: parseFloat(itemData.price.replace(/[^\d.-]/g, '')) // Remove currency symbols
+            price: parseFloat(itemData.price.replace(/[^\d.-]/g, '')), // Remove currency symbols
+            category: itemData.category || "Others"
           });
           
           // Save to storage
