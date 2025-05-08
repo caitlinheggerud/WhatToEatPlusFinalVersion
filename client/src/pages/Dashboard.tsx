@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { getReceiptItems } from "@/lib/api";
+import { getReceipts, getReceiptItems } from "@/lib/api";
 import { DashboardLayout } from "@/components/layout/Dashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,19 +9,26 @@ import { DownloadIcon, PieChartIcon, BarChartIcon, CalendarIcon, FilterIcon } fr
 import { Badge } from "@/components/ui/badge";
 import { type ReceiptItemResponse } from "@shared/schema";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import ReceiptList from "@/components/ReceiptList";
 
 export default function Dashboard() {
-  const [receipts, setReceipts] = useState<ReceiptItemResponse[]>([]);
+  const [receipts, setReceipts] = useState<any[]>([]);
+  const [receiptItems, setReceiptItems] = useState<ReceiptItemResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    async function fetchReceipts() {
+    async function fetchData() {
       try {
         setLoading(true);
-        const data = await getReceiptItems();
-        setReceipts(data);
+        // Fetch receipts list
+        const receiptsData = await getReceipts();
+        setReceipts(receiptsData);
+        
+        // For backward compatibility, also fetch all receipt items for charts
+        const itemsData = await getReceiptItems();
+        setReceiptItems(itemsData);
       } catch (err) {
         console.error("Error fetching receipts:", err);
         toast({
@@ -34,7 +41,7 @@ export default function Dashboard() {
       }
     }
 
-    fetchReceipts();
+    fetchData();
   }, [toast]);
 
   // Get unique categories

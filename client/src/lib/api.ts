@@ -1,5 +1,5 @@
 import { apiRequest } from "./queryClient";
-import { type ReceiptItemResponse } from "@shared/schema";
+import { type ReceiptItemResponse, type ReceiptWithItems } from "@shared/schema";
 
 /**
  * Uploads a receipt image and analyzes it using Gemini API
@@ -27,13 +27,29 @@ export async function analyzeReceipt(file: File): Promise<ReceiptItemResponse[]>
 /**
  * Saves receipt items to the server
  */
-export async function saveReceiptItems(items: ReceiptItemResponse[]): Promise<any> {
+export async function saveReceiptItems(items: ReceiptItemResponse[]): Promise<ReceiptWithItems> {
   const response = await apiRequest('POST', '/api/receipts/items', items);
   return await response.json();
 }
 
 /**
- * Fetches all receipt items from the server
+ * Fetches all receipts from the server
+ */
+export async function getReceipts(): Promise<any> {
+  const response = await apiRequest('GET', '/api/receipts');
+  return await response.json();
+}
+
+/**
+ * Fetches a specific receipt with its items
+ */
+export async function getReceiptWithItems(id: number): Promise<ReceiptWithItems> {
+  const response = await apiRequest('GET', `/api/receipts/${id}`);
+  return await response.json();
+}
+
+/**
+ * Legacy: Fetches all receipt items from the server (flattened, not grouped by receipt)
  */
 export async function getReceiptItems(): Promise<any> {
   const response = await apiRequest('GET', '/api/receipts/items');
