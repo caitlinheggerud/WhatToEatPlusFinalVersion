@@ -117,31 +117,32 @@ function Recipes() {
       className={`overflow-hidden hover-card ${isRandom ? 'border-primary border-2' : ''}`}
     >
       {recipe.imageUrl ? (
-        <div className="relative w-full">
+        <div className="relative w-full h-48 overflow-hidden">
           <img 
             src={recipe.imageUrl} 
-            alt={recipe.title} 
-            className="recipe-image"
+            alt={recipe.title}
+            className="w-full h-full object-cover"
             onError={(e) => {
               // If image fails to load, replace with placeholder
               e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2'/%3E%3Cpath d='M7 2v20'/%3E%3Cpath d='M21 15V2'/%3E%3Cpath d='M18 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'/%3E%3Cpath d='M18 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'/%3E%3C/svg%3E";
               e.currentTarget.style.padding = "2rem";
               e.currentTarget.style.background = "#f1f1f1";
+              e.currentTarget.className = "w-full h-full object-contain";
             }}
           />
           {isRandom && (
-            <div className="absolute top-3 right-3 bg-gradient text-white px-3 py-1 rounded-full text-xs font-medium shadow-sm backdrop-blur-sm">
+            <div className="absolute top-2 right-2 bg-gradient text-white px-3 py-1 rounded-full text-xs font-medium shadow-sm backdrop-blur-sm">
               Random Pick
             </div>
           )}
           {recipe.mealTypeId && mealTypes.find(t => t.id === recipe.mealTypeId) && (
-            <div className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm text-primary px-3 py-1 rounded-full text-xs font-semibold shadow-sm">
+            <div className="absolute top-2 left-2 bg-white/80 backdrop-blur-sm text-primary px-3 py-1 rounded-full text-xs font-semibold shadow-sm">
               {mealTypes.find(t => t.id === recipe.mealTypeId)?.name}
             </div>
           )}
         </div>
       ) : (
-        <div className="w-full h-[220px] bg-muted flex items-center justify-center">
+        <div className="w-full h-48 bg-muted flex items-center justify-center">
           <Utensils className="h-16 w-16 text-muted-foreground opacity-40" />
         </div>
       )}

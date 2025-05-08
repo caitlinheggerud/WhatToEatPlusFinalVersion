@@ -4,8 +4,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserIcon, Settings, Bell, Heart, LogOut } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 function Profile() {
+  const { toast } = useToast();
+  
+  const handleFeatureNotAvailable = (feature: string) => {
+    toast({
+      title: "Coming Soon",
+      description: `${feature} will be available in a future update.`,
+      variant: "default"
+    });
+  };
+  
   return (
     <div className="py-6 space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
@@ -34,19 +45,35 @@ function Profile() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <Button variant="outline" className="w-full justify-start">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => handleFeatureNotAvailable("Account Settings")}
+              >
                 <Settings className="mr-2 h-4 w-4" />
                 Account Settings
               </Button>
-              <Button variant="outline" className="w-full justify-start">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => handleFeatureNotAvailable("Notifications")}
+              >
                 <Bell className="mr-2 h-4 w-4" />
                 Notifications
               </Button>
-              <Button variant="outline" className="w-full justify-start">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => handleFeatureNotAvailable("Saved Recipes")}
+              >
                 <Heart className="mr-2 h-4 w-4" />
                 Saved Recipes
               </Button>
-              <Button variant="outline" className="w-full justify-start text-destructive hover:text-destructive">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start text-destructive hover:text-destructive"
+                onClick={() => handleFeatureNotAvailable("Sign Out")}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign Out
               </Button>
