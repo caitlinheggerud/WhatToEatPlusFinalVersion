@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { getReceipts, getReceiptItems } from "@/lib/api";
+import { getReceipts, getReceiptItems, saveReceiptItems } from "@/lib/api";
+import CenteredUploadButton from "@/components/CenteredUploadButton";
+import { UploadReceiptModal } from "@/components/UploadReceiptModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DownloadIcon, PieChartIcon, BarChartIcon, CalendarIcon, FilterIcon } from "lucide-react";
+import { DownloadIcon, PieChartIcon, BarChartIcon, CalendarIcon, FilterIcon, UploadIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { type ReceiptItemResponse } from "@shared/schema";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -88,6 +90,40 @@ export default function Dashboard() {
     }
   };
 
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  
+  const handleOpenUploadModal = () => {
+    setIsUploadModalOpen(true);
+  };
+  
+  const handleCloseUploadModal = () => {
+    setIsUploadModalOpen(false);
+  };
+  
+  const handleSuccessfulUpload = async (items: any[]) => {
+    try {
+      // Save the receipt items
+      await saveReceiptItems(items);
+      
+      toast({
+        title: "Success",
+        description: "Receipt saved successfully",
+        variant: "default",
+      });
+      
+      // Refresh receipt items
+      const allItems = await getReceiptItems();
+      setReceipts(allItems);
+    } catch (err) {
+      console.error("Error saving receipt items:", err);
+      toast({
+        title: "Error",
+        description: "Failed to save receipt",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
       <div className="py-6 space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
@@ -98,6 +134,14 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <Button 
+              className="bg-gradient" 
+              size="sm"
+              onClick={handleOpenUploadModal}
+            >
+              <UploadIcon className="mr-2 h-4 w-4" />
+              Upload Receipt
+            </Button>
             <Button variant="outline" size="sm" className="bg-white hover:bg-white/80 transition-colors">
               <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
               Date Range
@@ -106,12 +150,26 @@ export default function Dashboard() {
               <FilterIcon className="mr-2 h-4 w-4 text-primary" />
               Filter
             </Button>
-            <Button className="bg-gradient" size="sm">
-              <DownloadIcon className="mr-2 h-4 w-4" />
+            <Button variant="outline" size="sm" className="bg-white hover:bg-white/80 transition-colors">
+              <DownloadIcon className="mr-2 h-4 w-4 text-primary" />
               Export
             </Button>
           </div>
         </div>
+        
+        {/* Centered Upload Button - Show only when there's no data */}
+        {receipts.length === 0 && !loading && (
+          <div className="bg-white/70 shadow-sm border border-border/60 rounded-lg overflow-hidden my-6">
+            <CenteredUploadButton />
+          </div>
+        )}
+        
+        {/* Upload Modal */}
+        <UploadReceiptModal
+          isOpen={isUploadModalOpen}
+          onClose={handleCloseUploadModal}
+          onSuccess={handleSuccessfulUpload}
+        />
 
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
           <Card className="hover-card overflow-hidden border-border/60 shadow-sm">
