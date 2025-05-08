@@ -37,6 +37,7 @@ export function Navbar() {
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: BarChart3Icon },
     { name: "Recipes", href: "/recipes", icon: UtensilsCrossedIcon },
+    { name: "Favorites", href: "/favorites", icon: HeartIcon },
     { name: "Receipts", href: "/receipts", icon: ReceiptIcon },
     { name: "Inventory", href: "/inventory", icon: ShoppingBasketIcon },
   ];
