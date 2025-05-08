@@ -105,10 +105,10 @@ function Favorites() {
           {favoriteRecipes.map((recipe) => (
             <Card 
               key={recipe.id} 
-              className="overflow-hidden hover-card"
+              className="overflow-hidden hover-card flex flex-col h-full"
             >
               {recipe.imageUrl ? (
-                <div className="relative w-full h-48 overflow-hidden">
+                <div className="relative w-full h-48 overflow-hidden flex-shrink-0">
                   <img 
                     src={recipe.imageUrl} 
                     alt={recipe.title}
@@ -132,7 +132,7 @@ function Favorites() {
                   </button>
                 </div>
               ) : (
-                <div className="relative w-full h-48 bg-muted flex items-center justify-center">
+                <div className="relative w-full h-48 bg-muted flex items-center justify-center flex-shrink-0">
                   <Utensils className="h-16 w-16 text-muted-foreground opacity-40" />
                   <button 
                     className="absolute top-2 right-2 h-8 w-8 rounded-full flex items-center justify-center bg-primary text-white transition-colors"
@@ -146,58 +146,60 @@ function Favorites() {
                 </div>
               )}
               
-              <CardHeader className="pb-2 pt-4">
-                <CardTitle className="text-xl font-semibold line-clamp-2 flex items-start justify-between group">
-                  <span>{recipe.title}</span>
-                  {recipe.sourceUrl && (
-                    <a 
-                      href={recipe.sourceUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors ml-2 mt-1 flex-shrink-0"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  )}
-                </CardTitle>
+              <div className="flex flex-col flex-grow">
+                <CardHeader className="pb-2 pt-4">
+                  <CardTitle className="text-xl font-semibold line-clamp-2 flex items-start justify-between group">
+                    <span>{recipe.title}</span>
+                    {recipe.sourceUrl && (
+                      <a 
+                        href={recipe.sourceUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-muted-foreground hover:text-primary transition-colors ml-2 mt-1 flex-shrink-0"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    )}
+                  </CardTitle>
+                  
+                  <CardDescription className="text-sm font-medium text-accent-foreground">
+                    {recipe.calories ? (
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">{Math.round(recipe.calories)}</span> calories per serving
+                      </div>
+                    ) : 'Calories information unavailable'}
+                  </CardDescription>
+                </CardHeader>
                 
-                <CardDescription className="text-sm font-medium text-accent-foreground">
-                  {recipe.calories ? (
-                    <div className="flex items-center gap-1">
-                      <span className="font-medium">{Math.round(recipe.calories)}</span> calories per serving
+                <CardContent className="pb-4 flex-grow">
+                  <div className="flex justify-between text-sm mb-4 text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="h-4 w-4" />
+                      <span>Prep: {recipe.prepTime || 'N/A'}m</span>
                     </div>
-                  ) : 'Calories information unavailable'}
-                </CardDescription>
-              </CardHeader>
-              
-              <CardContent className="pb-4">
-                <div className="flex justify-between text-sm mb-4 text-muted-foreground">
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="h-4 w-4" />
-                    <span>Prep: {recipe.prepTime || 'N/A'}m</span>
+                    <div className="flex items-center gap-1.5">
+                      <ChefHat className="h-4 w-4" />
+                      <span>Cook: {recipe.cookTime || 'N/A'}m</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Users className="h-4 w-4" />
+                      <span>Serves: {recipe.servings}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <ChefHat className="h-4 w-4" />
-                    <span>Cook: {recipe.cookTime || 'N/A'}m</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Users className="h-4 w-4" />
-                    <span>Serves: {recipe.servings}</span>
-                  </div>
-                </div>
-              </CardContent>
-              
-              <CardFooter className="pt-0">
-                <Button 
-                  className="w-full bg-gradient hover:shadow-md transition-all"
-                  onClick={() => {
-                    // Open the recipe in a modal or redirect to a dedicated page
-                    window.open(recipe.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(recipe.title)}+recipe`, '_blank');
-                  }}
-                >
-                  View Recipe
-                </Button>
-              </CardFooter>
+                </CardContent>
+                
+                <CardFooter className="pt-0 mt-auto">
+                  <Button 
+                    className="w-full bg-gradient hover:shadow-md transition-all"
+                    onClick={() => {
+                      // Open the recipe in a modal or redirect to a dedicated page
+                      window.open(recipe.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(recipe.title)}+recipe`, '_blank');
+                    }}
+                  >
+                    View Recipe
+                  </Button>
+                </CardFooter>
+              </div>
             </Card>
           ))}
         </div>
