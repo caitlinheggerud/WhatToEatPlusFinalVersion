@@ -83,19 +83,12 @@ export default function Home() {
       {state === "upload" && (
         <div className="space-y-8 pb-8">
           <HeroSection onScanClick={() => document.getElementById('fileUpload')?.click()} />
-          
-          <div className="container max-w-4xl">
-            <div className="rounded-lg border bg-card p-8 shadow">
-              <h2 className="text-xl font-semibold mb-4">上传收据</h2>
-              <p className="text-muted-foreground mb-6">
-                上传您的收据照片，让AI自动识别商品信息并生成支出报告。
-              </p>
-              <UploadSection 
-                onFileSelect={handleFileSelect}
-                onAnalyze={handleAnalyze}
-                showAnalyzeButton={false}
-              />
-            </div>
+          <div className="hidden">
+            <UploadSection 
+              onFileSelect={handleFileSelect}
+              onAnalyze={handleAnalyze}
+              showAnalyzeButton={false}
+            />
           </div>
         </div>
       )}
