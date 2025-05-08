@@ -14,6 +14,11 @@ export default function ResultSection({
   onNewUpload,
   onSaveResults
 }: ResultSectionProps) {
+  // Format currency for display with the same symbol as in the first item
+  const currencySymbol = items.length > 0 ? 
+    items[0].price.replace(/[\d.-]/g, '').trim() || '$' : 
+    '$';
+    
   // Filter out GST and TOTAL entries for separate display
   const regularItems = items.filter(item => 
     item.category !== 'Tax' && item.category !== 'Total' && 
@@ -47,11 +52,6 @@ export default function ResultSection({
   const displayTotal = totalItem ? 
     parseFloat(totalItem.price.replace(/[^\d.-]/g, '')) : 
     calculatedTotal;
-  
-  // Format currency for display with the same symbol as in the first item
-  const currencySymbol = items.length > 0 ? 
-    items[0].price.replace(/[\d.-]/g, '').trim() || '¥' : 
-    '¥';
   
   return (
     <div>
