@@ -50,13 +50,13 @@ export default function Home() {
     try {
       await saveReceiptItems(items);
       toast({
-        title: "保存成功",
-        description: "小票数据已保存",
+        title: "Saved Successfully",
+        description: "Receipt data has been saved",
       });
     } catch (err) {
       console.error("Error saving receipt items:", err);
       toast({
-        title: "保存失败",
+        title: "Save Failed",
         description: err instanceof Error ? err.message : "Failed to save receipt items",
         variant: "destructive",
       });
@@ -81,8 +81,8 @@ export default function Home() {
     <div className="bg-gray-50 min-h-screen">
       <div className="min-h-screen max-w-md mx-auto px-4 py-8">
         <header className="mb-6">
-          <h1 className="text-2xl font-semibold text-center">小票识别</h1>
-          <p className="text-sm text-gray-500 text-center mt-1">上传小票照片，自动识别消费项目</p>
+          <h1 className="text-2xl font-semibold text-center">Receipt Scanner</h1>
+          <p className="text-sm text-gray-500 text-center mt-1">Upload receipt photos to automatically identify items</p>
         </header>
 
         <main>

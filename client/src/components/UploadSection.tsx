@@ -59,9 +59,9 @@ export default function UploadSection({
         <div className="mx-auto w-12 h-12 text-gray-400 mb-3">
           <Upload className="w-full h-full" />
         </div>
-        <p className="text-sm font-medium mb-1">点击或拖拽上传小票照片</p>
-        <p className="text-xs text-gray-500 mb-3">支持 JPG、PNG 格式</p>
-        <Button>选择图片</Button>
+        <p className="text-sm font-medium mb-1">Click or drag to upload receipt photo</p>
+        <p className="text-xs text-gray-500 mb-3">Supports JPG, PNG formats</p>
+        <Button>Select Image</Button>
         <input 
           type="file" 
           ref={fileInputRef}
@@ -72,7 +72,7 @@ export default function UploadSection({
       </div>
       
       <div className="mt-2 text-xs text-gray-500 text-center">
-        小票将使用 Gemini API 进行识别处理
+        Receipts will be processed using Gemini API
       </div>
       
       {showAnalyzeButton && (
@@ -81,7 +81,7 @@ export default function UploadSection({
             className="w-full bg-primary hover:bg-indigo-700"
             onClick={onAnalyze}
           >
-            开始识别小票
+            Analyze Receipt
           </Button>
         </div>
       )}

@@ -16,7 +16,7 @@ export default function ImagePreview({
       <div className="relative">
         <img 
           src={imageUrl} 
-          alt="上传的小票" 
+          alt="Uploaded receipt" 
           className="w-full h-auto rounded-lg shadow-sm object-contain max-h-64 mx-auto" 
         />
         <button 

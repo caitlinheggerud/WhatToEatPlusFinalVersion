@@ -12,16 +12,16 @@ export default function ErrorState({ message, onRetry }: ErrorStateProps) {
       <div className="text-error mb-2">
         <AlertCircle className="w-8 h-8 mx-auto text-red-500" />
       </div>
-      <h3 className="font-medium text-red-800 mb-1">识别失败</h3>
+      <h3 className="font-medium text-red-800 mb-1">Recognition Failed</h3>
       <p className="text-sm text-red-600 mb-3">
-        {message || "无法识别小票内容，请重试"}
+        {message || "Unable to recognize receipt content, please try again"}
       </p>
       <Button 
         variant="outline" 
         className="border-red-300 text-red-700 hover:bg-red-50" 
         onClick={onRetry}
       >
-        重新上传
+        Try Again
       </Button>
     </div>
   );

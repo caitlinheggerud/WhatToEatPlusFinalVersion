@@ -29,7 +29,7 @@ export default function ResultSection({
     <div>
       <Card className="shadow-sm border border-gray-200 overflow-hidden">
         <CardHeader className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-          <h2 className="font-semibold text-gray-800">识别结果</h2>
+          <h2 className="font-semibold text-gray-800">Results</h2>
         </CardHeader>
         
         <CardContent className="p-0">
@@ -55,7 +55,7 @@ export default function ResultSection({
         
         <CardFooter className="p-4 bg-gray-50 border-t border-gray-200">
           <div className="flex justify-between items-center w-full">
-            <span className="font-medium">总计</span>
+            <span className="font-medium">Total</span>
             <span className="font-semibold text-lg">
               {`${currencySymbol}${total.toFixed(2)}`}
             </span>
@@ -69,13 +69,13 @@ export default function ResultSection({
           className="border-gray-300 text-gray-700" 
           onClick={onNewUpload}
         >
-          重新上传
+          Upload New
         </Button>
         <Button 
           className="bg-primary hover:bg-indigo-700"
           onClick={onSaveResults}
         >
-          保存结果
+          Save Results
         </Button>
       </div>
     </div>
