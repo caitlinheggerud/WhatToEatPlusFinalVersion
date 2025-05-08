@@ -18,7 +18,62 @@ export function Navbar() {
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [favoritesCount, setFavoritesCount] = useState(0);
   const profileRef = useRef<HTMLDivElement>(null);
+  
+  // Load favorites count from localStorage
+  useEffect(() => {
+    const checkFavorites = () => {
+      const storedFavorites = localStorage.getItem('favorites');
+      if (storedFavorites) {
+        try {
+          const favorites = JSON.parse(storedFavorites);
+          setFavoritesCount(Array.isArray(favorites) ? favorites.length : 0);
+        } catch (e) {
+          console.error("Failed to parse favorites in navbar:", e);
+          setFavoritesCount(0);
+        }
+      } else {
+        setFavoritesCount(0);
+      }
+    };
+    
+    // Check on initial load
+    checkFavorites();
+    
+    // Set up storage event listener to detect changes to localStorage
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'favorites') {
+        checkFavorites();
+      }
+    };
+    
+    // Set up custom event listener for favorites updates
+    const handleFavoritesUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && customEvent.detail.favorites) {
+        setFavoritesCount(
+          Array.isArray(customEvent.detail.favorites) 
+            ? customEvent.detail.favorites.length 
+            : 0
+        );
+      } else {
+        checkFavorites();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('favoritesUpdated', handleFavoritesUpdated);
+    
+    // Also set up interval to check periodically (localStorage events don't trigger in same window)
+    const interval = setInterval(checkFavorites, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('favoritesUpdated', handleFavoritesUpdated);
+      clearInterval(interval);
+    };
+  }, []);
   
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -61,6 +116,7 @@ export function Navbar() {
         <nav className="hidden md:flex items-center space-x-1">
           {navItems.map(({ name, href, icon: Icon }) => {
             const isActive = location === href;
+            const showBadge = name === "Favorites" && favoritesCount > 0;
             
             return (
               <Link href={href} key={name}>
@@ -70,7 +126,14 @@ export function Navbar() {
                     ? "text-primary bg-primary/5" 
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}>
-                  <Icon className="h-4 w-4 mr-2" />
+                  <div className="relative">
+                    <Icon className="h-4 w-4 mr-2" />
+                    {showBadge && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                        {favoritesCount > 9 ? '9+' : favoritesCount}
+                      </span>
+                    )}
+                  </div>
                   {name}
                 </div>
               </Link>
@@ -104,7 +167,14 @@ export function Navbar() {
                 </div>
                 <Link href="/favorites">
                   <div className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
-                    <HeartIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <div className="relative">
+                      <HeartIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                      {favoritesCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                          {favoritesCount > 9 ? '9+' : favoritesCount}
+                        </span>
+                      )}
+                    </div>
                     Favorites
                   </div>
                 </Link>
@@ -166,6 +236,7 @@ export function Navbar() {
               <nav className="flex flex-col space-y-1 mb-8">
                 {navItems.map(({ name, href, icon: Icon }) => {
                   const isActive = location === href;
+                  const showBadge = name === "Favorites" && favoritesCount > 0;
                   
                   return (
                     <Link href={href} key={name}>
@@ -178,7 +249,14 @@ export function Navbar() {
                         )}
                         onClick={() => setMobileMenuOpen(false)}
                       >
-                        <Icon className="h-5 w-5 mr-3" />
+                        <div className="relative">
+                          <Icon className="h-5 w-5 mr-3" />
+                          {showBadge && (
+                            <span className="absolute -top-1.5 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                              {favoritesCount > 9 ? '9+' : favoritesCount}
+                            </span>
+                          )}
+                        </div>
                         {name}
                       </div>
                     </Link>
@@ -193,7 +271,14 @@ export function Navbar() {
                 </div>
                 <Link href="/favorites">
                   <div className="flex items-center px-4 py-3 text-sm text-muted-foreground hover:bg-muted rounded-md" onClick={() => setMobileMenuOpen(false)}>
-                    <HeartIcon className="h-5 w-5 mr-3" />
+                    <div className="relative">
+                      <HeartIcon className="h-5 w-5 mr-3" />
+                      {favoritesCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                          {favoritesCount > 9 ? '9+' : favoritesCount}
+                        </span>
+                      )}
+                    </div>
                     Favorites
                   </div>
                 </Link>

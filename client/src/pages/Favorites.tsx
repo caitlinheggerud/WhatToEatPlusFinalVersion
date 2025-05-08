@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bookmark, Heart, ExternalLink, Clock, ChefHat, Users, Utensils, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -103,6 +103,11 @@ function Favorites() {
     const newFavorites = favorites.filter(id => id !== recipeId);
     setFavorites(newFavorites);
     localStorage.setItem('favorites', JSON.stringify(newFavorites));
+    
+    // Dispatch a custom event to notify other components about favorites change
+    window.dispatchEvent(new CustomEvent('favoritesUpdated', { 
+      detail: { favorites: newFavorites } 
+    }));
     
     toast({
       title: "Removed from favorites",
