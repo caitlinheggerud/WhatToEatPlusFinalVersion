@@ -107,8 +107,11 @@ export async function mapSpoonacularRecipeToAppRecipe(spoonacularRecipe: any) {
   const prepTime = spoonacularRecipe.preparationMinutes || spoonacularRecipe.readyInMinutes ? Math.floor(spoonacularRecipe.readyInMinutes / 3) : null;
   const cookTime = spoonacularRecipe.cookingMinutes || spoonacularRecipe.readyInMinutes ? Math.floor(spoonacularRecipe.readyInMinutes * 2 / 3) : null;
 
-  // Get a better image from Pexels
-  const pexelsImage = await getCachedImageForRecipe(spoonacularRecipe.title);
+  // Extract main ingredients from the recipe
+  const ingredients: string[] = spoonacularRecipe.extendedIngredients?.map((ingredient: any) => ingredient.name) || [];
+  
+  // Get a better image from Pexels - pass ingredients to improve image relevance
+  const pexelsImage = await getCachedImageForRecipe(spoonacularRecipe.title, ingredients);
 
   return {
     id: spoonacularRecipe.id,

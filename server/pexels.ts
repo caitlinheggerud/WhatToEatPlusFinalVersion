@@ -64,17 +64,62 @@ export async function getCuratedFoodImage(): Promise<string | null> {
 /**
  * Get image for recipe
  * @param recipeName Recipe name or keywords
+ * @param ingredients List of main ingredients
  * @returns URL of the image
  */
-export async function getImageForRecipe(recipeName: string): Promise<string | null> {
+export async function getImageForRecipe(recipeName: string, ingredients: string[] = []): Promise<string | null> {
   try {
-    const images = await searchImages(recipeName, 1);
+    // Clean up recipe name by removing special characters
+    const cleanedRecipeName = recipeName.replace(/[^\w\s]/gi, '');
     
-    if (images.length === 0) {
-      return getCuratedFoodImage();
+    // Extract main keywords from recipe name
+    const recipeWords = cleanedRecipeName.split(' ')
+      .filter(word => word.length > 3) // Only keep words with more than 3 characters
+      .map(word => word.toLowerCase());
+    
+    // Create a more specific query by combining recipe name with main ingredients
+    let specificQuery = cleanedRecipeName;
+    
+    // Add the most relevant ingredients to the query (max 2)
+    if (ingredients && ingredients.length > 0) {
+      const mainIngredients = ingredients
+        .filter(ing => ing && ing.trim().length > 0)
+        .slice(0, 2) // Take max 2 ingredients
+        .join(' ');
+      
+      if (mainIngredients) {
+        specificQuery = `${cleanedRecipeName} with ${mainIngredients}`;
+      }
     }
     
-    return images[0];
+    console.log(`Searching Pexels for: ${specificQuery}`);
+    const images = await searchImages(specificQuery, 1);
+    
+    if (images.length > 0) {
+      return images[0];
+    }
+    
+    // If no results, try just the recipe name
+    console.log(`No results for specific query, trying just recipe name: ${cleanedRecipeName}`);
+    const basicImages = await searchImages(cleanedRecipeName, 1);
+    
+    if (basicImages.length > 0) {
+      return basicImages[0];
+    }
+    
+    // If all else fails, use the first ingredient as search term
+    if (ingredients && ingredients.length > 0) {
+      const mainIngredient = ingredients[0];
+      console.log(`Trying with main ingredient: ${mainIngredient}`);
+      const ingredientImages = await searchImages(`${mainIngredient} food`, 1);
+      
+      if (ingredientImages.length > 0) {
+        return ingredientImages[0];
+      }
+    }
+    
+    // Last resort: curated food image
+    return getCuratedFoodImage();
   } catch (error) {
     console.error('Error getting image for recipe:', error);
     return getCuratedFoodImage();
@@ -87,20 +132,25 @@ const imageCache: Map<string, string> = new Map();
 /**
  * Get image for recipe with caching
  * @param recipeName Recipe name or keywords
+ * @param ingredients List of main ingredients
  * @returns URL of the image
  */
-export async function getCachedImageForRecipe(recipeName: string): Promise<string | null> {
+export async function getCachedImageForRecipe(recipeName: string, ingredients: string[] = []): Promise<string | null> {
+  // Create a cache key that includes ingredients to ensure better matches
+  const cacheKey = ingredients && ingredients.length > 0 ? 
+    `${recipeName}_${ingredients.slice(0, 3).join('_')}` : recipeName;
+  
   // Check if we have this recipe in the cache
-  if (imageCache.has(recipeName)) {
-    return imageCache.get(recipeName) || null;
+  if (imageCache.has(cacheKey)) {
+    return imageCache.get(cacheKey) || null;
   }
   
   // Get image from Pexels
-  const imageUrl = await getImageForRecipe(recipeName);
+  const imageUrl = await getImageForRecipe(recipeName, ingredients);
   
   // Store in cache
   if (imageUrl) {
-    imageCache.set(recipeName, imageUrl);
+    imageCache.set(cacheKey, imageUrl);
   }
   
   return imageUrl;
