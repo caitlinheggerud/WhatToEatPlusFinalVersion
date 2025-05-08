@@ -123,33 +123,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Fix missing quotes around property names
         jsonText = jsonText.replace(/([{,]\s*)([a-zA-Z0-9_]+)(\s*:)/g, '$1"$2"$3');
         
-        // Fix unescaped quotes in strings
-        const fixStringQuotes = (text) => {
-          const regex = /"([^"\\]*(\\.[^"\\]*)*)":/g;
-          let result = text;
-          let match;
-          
-          while ((match = regex.exec(text)) !== null) {
-            const propName = match[1];
-            // After property name and colon, find the value
-            const afterColon = text.substring(match.index + match[0].length).trim();
-            if (afterColon.startsWith('"')) {
-              // Find the end of the string value
-              let valueEnd = afterColon.indexOf('",', 1);
-              if (valueEnd === -1) valueEnd = afterColon.indexOf('"}', 1);
-              if (valueEnd === -1) valueEnd = afterColon.indexOf('"]', 1);
+        // More robust approach to handle problematic JSON
+        const sanitizeJsonText = (text: string): string => {
+          try {
+            // First try to parse it directly - if it works, no need for complex handling
+            JSON.parse(text);
+            return text;
+          } catch (e) {
+            // If it fails, implement a more aggressive cleaning strategy
+            console.log("Initial JSON parsing failed, attempting more aggressive cleaning");
+            
+            // Fix any bad escape sequences and control characters
+            let result = text
+              // Handle escaped quotes that create invalid JSON  
+              .replace(/\\"/g, "'")  // Replace escaped quotes with single quotes
+              .replace(/(?<!\\\")\\(?!\\\")/g, "\\\\") // Escape backslashes properly
               
-              if (valueEnd !== -1) {
-                const value = afterColon.substring(1, valueEnd);
-                const escapedValue = value.replace(/"/g, '\\"');
-                result = result.replace(`"${propName}": "${value}"`, `"${propName}": "${escapedValue}"`);
+              // Handle mismatched quotes in values
+              .replace(/([{,]\s*"[^"]+"\s*:\s*)"([^"]*)([^\\])"([,}])/g, '$1"$2$3"$4')
+              
+              // Replace any control characters with spaces
+              .replace(/[\x00-\x1F\x7F]/g, ' ');
+            
+            // Convert all category values to proper format with double quotes
+            result = result.replace(/"category"\s*:\s*"?([^,"}\]]+)"?/g, '"category": "$1"');
+            
+            // Remove backslashes before double quotes in values
+            result = result.replace(/"([^"]+)\\\"([^"]+)"/g, '"$1\'$2"');
+            
+            // Final fix for any trailing commas in arrays
+            result = result.replace(/,\s*]/g, ']');
+            
+            console.log("After aggressive cleaning:", result);
+            
+            try {
+              // Try to parse the cleaned JSON
+              JSON.parse(result);
+              return result;
+            } catch (err) {
+              console.log("Aggressive cleaning failed, using hackish approach");
+              
+              // If all else fails, use a more hackish approach to forcibly extract and rebuild the JSON
+              const extractItems = /\{\s*"name"\s*:\s*"([^"]+)"\s*,\s*"description"\s*:\s*(?:null|"[^"]*")\s*,\s*"price"\s*:\s*"([^"]+)"\s*,\s*"category"\s*:\s*"([^"]+)"\s*\}/g;
+              
+              let matches = [];
+              let match;
+              
+              while ((match = extractItems.exec(text)) !== null) {
+                matches.push({
+                  name: match[1],
+                  description: null, // Simplify by defaulting to null
+                  price: match[2],
+                  category: match[3].replace(/[\\"\s]/g, '') // Clean up category
+                });
               }
+              
+              if (matches.length > 0) {
+                return JSON.stringify(matches);
+              }
+              
+              // If extraction still failed, return a version with all quotes handled
+              return text.replace(/"/g, '\\"').replace(/\\\\"/g, '\\"');
             }
           }
-          return result;
         };
         
-        jsonText = fixStringQuotes(jsonText);
+        // Apply our more robust sanitization function
+        jsonText = sanitizeJsonText(jsonText);
         
         // Log the cleaned JSON
         console.log("Cleaned JSON:", jsonText);
@@ -160,26 +200,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const prelimItems = JSON.parse(jsonText);
           
           // Check if GST is missing
-          const hasGst = prelimItems.some(item => 
+          const hasGst = prelimItems.some((item: any) => 
             item.category === 'Tax' || 
             ['GST', 'TAX', 'VAT'].includes(String(item.name).toUpperCase())
           );
           
           if (!hasGst) {
             // Find subtotal and total items
-            const regularItems = prelimItems.filter(item => 
+            const regularItems = prelimItems.filter((item: any) => 
               item.category !== 'Total' && 
               !['TOTAL', 'AMOUNT', 'PAYMENT'].includes(String(item.name).toUpperCase())
             );
             
-            const totalItem = prelimItems.find(item => 
+            const totalItem = prelimItems.find((item: any) => 
               item.category === 'Total' || 
               ['TOTAL', 'AMOUNT', 'PAYMENT'].includes(String(item.name).toUpperCase())
             );
             
             if (totalItem) {
               // Calculate subtotal
-              const subtotal = regularItems.reduce((sum, item) => {
+              const subtotal = regularItems.reduce((sum: number, item: any) => {
                 const priceValue = parseFloat(String(item.price).replace(/[^\d.-]/g, ''));
                 return sum + (isNaN(priceValue) ? 0 : priceValue);
               }, 0);
