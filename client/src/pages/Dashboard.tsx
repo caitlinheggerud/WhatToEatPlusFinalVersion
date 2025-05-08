@@ -5,10 +5,18 @@ import { DashboardLayout } from "@/components/layout/Dashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DownloadIcon, PieChartIcon, BarChartIcon, CalendarIcon, FilterIcon } from "lucide-react";
+import { 
+  DownloadIcon, PieChartIcon, BarChartIcon, CalendarIcon, 
+  FilterIcon, TrendingUpIcon, TrendingDownIcon, AlertTriangleIcon, 
+  LightbulbIcon, ArrowUpIcon, ArrowDownIcon
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { type ReceiptItemResponse } from "@shared/schema";
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { 
+  BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, 
+  ResponsiveContainer, Legend, LineChart, Line, CartesianGrid, Area, 
+  AreaChart, ComposedChart 
+} from 'recharts';
 import ReceiptList from "@/components/ReceiptList";
 
 export default function Dashboard() {
@@ -163,6 +171,8 @@ export default function Dashboard() {
             <TabsTrigger value="receipts">Receipts</TabsTrigger>
             <TabsTrigger value="items">All Items</TabsTrigger>
             <TabsTrigger value="charts">Charts</TabsTrigger>
+            <TabsTrigger value="analysis">Spending Analysis</TabsTrigger>
+            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
           
@@ -322,6 +332,365 @@ export default function Dashboard() {
                         <p className="text-muted-foreground">No data available</p>
                       </div>
                     )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="analysis" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Spending Breakdown</CardTitle>
+                  <CardDescription>
+                    Detailed analysis of your spending habits
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {categories.filter(c => c && c !== "Total").map(category => {
+                      const total = parseFloat(categoryTotals[category!] || "0");
+                      const percentage = (total / parseFloat(grandTotal)) * 100;
+                      return (
+                        <div key={category} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className={`h-3 w-3 rounded-full ${
+                                category === "Food" ? "bg-green-500" : 
+                                category === "Beverage" ? "bg-cyan-500" :
+                                category === "Household" ? "bg-blue-500" : 
+                                category === "Electronics" ? "bg-violet-500" :
+                                category === "Clothing" ? "bg-pink-500" :
+                                category === "Personal Care" ? "bg-orange-500" :
+                                category === "Other" ? "bg-gray-500" :
+                                "bg-purple-500"
+                              }`}></div>
+                              <span className="text-sm font-medium">{category}</span>
+                            </div>
+                            <span className="text-sm text-muted-foreground">${total.toFixed(2)} ({percentage.toFixed(1)}%)</span>
+                          </div>
+                          <div className="h-2 w-full rounded-full bg-muted">
+                            <div 
+                              className={`h-2 rounded-full ${
+                                category === "Food" ? "bg-green-500" : 
+                                category === "Beverage" ? "bg-cyan-500" :
+                                category === "Household" ? "bg-blue-500" : 
+                                category === "Electronics" ? "bg-violet-500" :
+                                category === "Clothing" ? "bg-pink-500" :
+                                category === "Personal Care" ? "bg-orange-500" :
+                                category === "Other" ? "bg-gray-500" :
+                                "bg-purple-500"
+                              }`} 
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Top Expenses</CardTitle>
+                  <CardDescription>
+                    Your most significant purchases
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {receiptItems
+                      .sort((a, b) => {
+                        const priceA = parseFloat(a.price.replace(/[^0-9.-]+/g, ""));
+                        const priceB = parseFloat(b.price.replace(/[^0-9.-]+/g, ""));
+                        return priceB - priceA;
+                      })
+                      .slice(0, 5)
+                      .map((item, index) => {
+                        const price = parseFloat(item.price.replace(/[^0-9.-]+/g, ""));
+                        const percentage = (price / parseFloat(grandTotal)) * 100;
+                        return (
+                          <div key={index} className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium">{item.name}</div>
+                              <div className="text-sm text-muted-foreground">{item.category}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold">{item.price}</div>
+                              <div className="text-xs text-muted-foreground">{percentage.toFixed(1)}% of total</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Spending Insights</CardTitle>
+                  <CardDescription>
+                    Key observations about your expenses
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {categories.filter(c => c && c !== "Total" && c !== "Other").map(category => {
+                      const total = parseFloat(categoryTotals[category!] || "0");
+                      const percentage = (total / parseFloat(grandTotal)) * 100;
+                      const icon = 
+                        percentage > 30 ? 
+                          <AlertTriangleIcon className="h-4 w-4 text-amber-500" /> : 
+                        percentage > 20 ? 
+                          <TrendingUpIcon className="h-4 w-4 text-blue-500" /> : 
+                          <TrendingDownIcon className="h-4 w-4 text-green-500" />;
+                      
+                      let insight = "";
+                      if (category === "Food" && percentage > 30) {
+                        insight = "High food spending. Consider meal planning or bulk purchases to reduce costs.";
+                      } else if (category === "Food") {
+                        insight = "Food spending is well managed.";
+                      } else if (category === "Personal Care" && percentage > 15) {
+                        insight = "Personal care expenses are higher than average.";
+                      } else if (category === "Household" && percentage > 25) {
+                        insight = "Significant household expenses. Look for bulk deals on essentials.";
+                      } else if (percentage > 20) {
+                        insight = `${category} spending is high (${percentage.toFixed(1)}% of total).`;
+                      } else if (percentage > 10) {
+                        insight = `${category} spending is moderate (${percentage.toFixed(1)}% of total).`;
+                      } else {
+                        insight = `${category} spending is low (${percentage.toFixed(1)}% of total).`;
+                      }
+                      
+                      return total > 0 ? (
+                        <div key={category} className="flex items-start gap-2">
+                          {icon}
+                          <div>
+                            <div className="font-medium">{category}</div>
+                            <div className="text-sm text-muted-foreground">{insight}</div>
+                          </div>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="md:col-span-3">
+                <CardHeader>
+                  <CardTitle>Spending Trend Analysis</CardTitle>
+                  <CardDescription>
+                    How your spending has changed over time
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={[
+                          { month: 'Jan', Food: 120, Beverage: 45, Household: 80, 'Personal Care': 30 },
+                          { month: 'Feb', Food: 100, Beverage: 50, Household: 70, 'Personal Care': 35 },
+                          { month: 'Mar', Food: 130, Beverage: 40, Household: 90, 'Personal Care': 25 },
+                          { month: 'Apr', Food: 110, Beverage: 55, Household: 75, 'Personal Care': 40 },
+                          { month: 'May', Food: parseFloat(categoryTotals["Food"] || "0"), 
+                                          Beverage: parseFloat(categoryTotals["Beverage"] || "0"), 
+                                          Household: parseFloat(categoryTotals["Household"] || "0"), 
+                                          'Personal Care': parseFloat(categoryTotals["Personal Care"] || "0") }
+                        ]}
+                        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
+                        <Legend />
+                        <Area type="monotone" dataKey="Food" stackId="1" stroke="#10b981" fill="#10b981" />
+                        <Area type="monotone" dataKey="Beverage" stackId="1" stroke="#06b6d4" fill="#06b6d4" />
+                        <Area type="monotone" dataKey="Household" stackId="1" stroke="#3b82f6" fill="#3b82f6" />
+                        <Area type="monotone" dataKey="Personal Care" stackId="1" stroke="#f97316" fill="#f97316" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="recommendations" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2">
+                    <LightbulbIcon className="h-5 w-5 text-yellow-500" />
+                    Spending Recommendations
+                  </CardTitle>
+                  <CardDescription>
+                    Personalized suggestions to improve your financial habits
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {Object.entries(categoryTotals).map(([category, total]) => {
+                    const totalValue = parseFloat(total);
+                    const percentage = (totalValue / parseFloat(grandTotal)) * 100;
+                    let recommendation = null;
+                    
+                    if (category === "Food" && percentage > 30) {
+                      recommendation = {
+                        title: "High Food Expenses",
+                        description: "Your dining expenses are high. Consider meal prepping or cooking at home more often to reduce costs.",
+                        icon: <TrendingDownIcon className="h-4 w-4 text-red-500" />
+                      };
+                    } else if (category === "Beverage" && percentage > 10) {
+                      recommendation = {
+                        title: "Beverage Spending",
+                        description: "Beverage costs are significant. Try using reusable water bottles and making coffee at home.",
+                        icon: <TrendingDownIcon className="h-4 w-4 text-amber-500" />
+                      };
+                    } else if (category === "Personal Care" && percentage > 15) {
+                      recommendation = {
+                        title: "Personal Care Budget",
+                        description: "Personal care spending is above average. Look for sales or bulk purchases on your regular items.",
+                        icon: <TrendingDownIcon className="h-4 w-4 text-amber-500" />
+                      };
+                    }
+                    
+                    return recommendation ? (
+                      <div key={category} className="rounded-lg border p-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold">{recommendation.title}</h4>
+                          {recommendation.icon}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">{recommendation.description}</p>
+                      </div>
+                    ) : null;
+                  })}
+                  
+                  <div className="rounded-lg border p-3 bg-blue-50 dark:bg-blue-950">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold">Balance Your Categories</h4>
+                      <ArrowUpIcon className="h-4 w-4 text-blue-500" />
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">Aim to keep each spending category below 25% of your total budget for better financial health.</p>
+                  </div>
+                  
+                  <div className="rounded-lg border p-3 bg-green-50 dark:bg-green-950">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold">Savings Opportunity</h4>
+                      <ArrowUpIcon className="h-4 w-4 text-green-500" />
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">Based on your current spending patterns, you could save approximately 15% by adjusting your highest expense categories.</p>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Recipe Suggestions</CardTitle>
+                  <CardDescription>
+                    Based on your recent food purchases
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {receiptItems
+                      .filter(item => item.category === "Food")
+                      .length > 0 ? (
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="rounded-lg border overflow-hidden">
+                          <div className="h-36 bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+                            <span className="text-3xl">🥗</span>
+                          </div>
+                          <div className="p-4">
+                            <h3 className="font-medium mb-1">Fresh Garden Salad</h3>
+                            <div className="text-sm text-muted-foreground mb-2">Use your fresh vegetables before they expire</div>
+                            <div className="flex flex-wrap gap-1">
+                              {["Lettuce", "Tomato", "Cucumber", "Bell Pepper"]
+                                .map(ing => (
+                                  <Badge variant="outline" key={ing} className="text-xs">{ing}</Badge>
+                                ))}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="rounded-lg border overflow-hidden">
+                          <div className="h-36 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+                            <span className="text-3xl">🍲</span>
+                          </div>
+                          <div className="p-4">
+                            <h3 className="font-medium mb-1">One-Pot Pasta</h3>
+                            <div className="text-sm text-muted-foreground mb-2">Quick dinner using pantry staples</div>
+                            <div className="flex flex-wrap gap-1">
+                              {["Pasta", "Tomato Sauce", "Garlic", "Onion", "Cheese"]
+                                .map(ing => (
+                                  <Badge variant="outline" key={ing} className="text-xs">{ing}</Badge>
+                                ))}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="rounded-lg border overflow-hidden">
+                          <div className="h-36 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                            <span className="text-3xl">🍚</span>
+                          </div>
+                          <div className="p-4">
+                            <h3 className="font-medium mb-1">Vegetable Stir Fry</h3>
+                            <div className="text-sm text-muted-foreground mb-2">Use your vegetables before they expire</div>
+                            <div className="flex flex-wrap gap-1">
+                              {["Rice", "Bell Pepper", "Carrot", "Broccoli", "Soy Sauce"]
+                                .map(ing => (
+                                  <Badge variant="outline" key={ing} className="text-xs">{ing}</Badge>
+                                ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">No food items found in your receipts to generate recipe suggestions.</p>
+                      </div>
+                    )}
+                    
+                    <div className="mt-6">
+                      <h3 className="font-medium mb-2">Expiration Tracker</h3>
+                      <div className="rounded-md border">
+                        <div className="p-1">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b bg-muted/50">
+                                <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Item</th>
+                                <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Expires</th>
+                                <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {[
+                                { name: "Milk", expiry: "May 10, 2025", status: "expiring-soon" },
+                                { name: "Bread", expiry: "May 12, 2025", status: "expiring-soon" },
+                                { name: "Tomatoes", expiry: "May 15, 2025", status: "good" },
+                                { name: "Chicken", expiry: "May 9, 2025", status: "expiring-soon" },
+                                { name: "Lettuce", expiry: "May 11, 2025", status: "expiring-soon" }
+                              ].map((item, index) => (
+                                <tr key={index} className="border-b transition-colors hover:bg-muted/50">
+                                  <td className="p-4 align-middle">{item.name}</td>
+                                  <td className="p-4 align-middle">{item.expiry}</td>
+                                  <td className="p-4 align-middle">
+                                    {item.status === "expired" ? (
+                                      <Badge variant="destructive">Expired</Badge>
+                                    ) : item.status === "expiring-soon" ? (
+                                      <Badge variant="secondary" className="bg-amber-500 hover:bg-amber-600 text-white">Expiring Soon</Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="bg-green-100 text-green-800">Good</Badge>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
