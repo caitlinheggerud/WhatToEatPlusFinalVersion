@@ -575,9 +575,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // For simplicity, let's use servings × 10 as maxReadyTime
         const maxReadyTime = servings ? servings * 10 : undefined;
         
+        // Process allergies if provided
+        const allergies = req.query.allergies ? 
+          (req.query.allergies as string).split(',').map(a => a.trim()).join(',') : 
+          undefined;
+        
         try {
           // Call Spoonacular API
-          const apiResponse = await searchRecipes(query, diet, mealTypeString, maxReadyTime);
+          const apiResponse = await searchRecipes(query, diet, mealTypeString, maxReadyTime, allergies);
           
           // Transform the response to match our app's format using Spoonacular images
           const recipes = apiResponse.results.map(mapSpoonacularRecipeToAppRecipe);
@@ -699,9 +704,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (dietTag) tags.push(dietTag);
         }
         
+        // Process allergies if provided
+        const allergies = req.query.allergies ? 
+          (req.query.allergies as string).split(',').map(a => a.trim()).join(',') : 
+          undefined;
+        
         try {
           // Get a single random recipe from Spoonacular
-          const apiResponse = await getRandomRecipes(tags, 1);
+          const apiResponse = await getRandomRecipes(tags, 1, allergies);
           
           if (apiResponse.recipes && apiResponse.recipes.length > 0) {
             // Transform the response to match our app's format

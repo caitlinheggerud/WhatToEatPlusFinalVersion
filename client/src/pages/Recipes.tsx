@@ -43,7 +43,8 @@ function Recipes() {
     mealTypeId: 'all',
     inventoryBased: true,
     servings: '2',
-    useApi: true
+    useApi: true,
+    allergies: [] as string[]
   });
   
   const [randomRecipe, setRandomRecipe] = useState<Recipe | null>(null);
@@ -65,7 +66,8 @@ function Recipes() {
         mealTypeId: filters.mealTypeId,
         inventoryBased: filters.inventoryBased,
         servings: parseInt(filters.servings),
-        useApi: filters.useApi
+        useApi: filters.useApi,
+        allergies: filters.allergies
       });
     },
     enabled: true, // Auto-load recipes on component mount
@@ -80,7 +82,8 @@ function Recipes() {
       setIsLoadingRandom(true);
       const randomRecipeData = await getRandomRecipe({
         mealTypeId: filters.mealTypeId,
-        useApi: filters.useApi
+        useApi: filters.useApi,
+        allergies: filters.allergies
       });
       setRandomRecipe(randomRecipeData);
     } catch (error) {

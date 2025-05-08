@@ -114,6 +114,7 @@ export async function getRecipes(params: {
   inventoryBased?: boolean;
   servings?: number;
   useApi?: boolean;
+  allergies?: string[];
 }): Promise<any> {
   const searchParams = new URLSearchParams();
   
@@ -127,6 +128,10 @@ export async function getRecipes(params: {
   
   if (params.dietaryRestrictions && params.dietaryRestrictions.length) {
     searchParams.append('dietaryRestrictions', params.dietaryRestrictions.join(','));
+  }
+  
+  if (params.allergies && params.allergies.length) {
+    searchParams.append('allergies', params.allergies.join(','));
   }
   
   if (params.searchTerm) {
@@ -153,6 +158,7 @@ export async function getRandomRecipe(params: {
   dietaryRestrictions?: number[];
   inventoryBased?: boolean;
   useApi?: boolean;
+  allergies?: string[];
 }): Promise<any> {
   const searchParams = new URLSearchParams();
   
@@ -166,6 +172,10 @@ export async function getRandomRecipe(params: {
   
   if (params.dietaryRestrictions && params.dietaryRestrictions.length) {
     searchParams.append('dietaryRestrictions', params.dietaryRestrictions.join(','));
+  }
+  
+  if (params.allergies && params.allergies.length) {
+    searchParams.append('allergies', params.allergies.join(','));
   }
   
   if (params.inventoryBased) {
