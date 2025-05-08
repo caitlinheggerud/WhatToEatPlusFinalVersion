@@ -579,8 +579,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Call Spoonacular API
           const apiResponse = await searchRecipes(query, diet, mealTypeString, maxReadyTime);
           
-          // Transform the response to match our app's format
-          const recipes = apiResponse.results.map(mapSpoonacularRecipeToAppRecipe);
+          // Transform the response to match our app's format (with Pexels images)
+          const recipesPromises = apiResponse.results.map(mapSpoonacularRecipeToAppRecipe);
+          const recipes = await Promise.all(recipesPromises);
           
           return res.status(200).json(recipes);
         } catch (apiError) {
@@ -704,8 +705,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const apiResponse = await getRandomRecipes(tags, 1);
           
           if (apiResponse.recipes && apiResponse.recipes.length > 0) {
-            // Transform the response to match our app's format
-            const recipe = mapSpoonacularRecipeToAppRecipe(apiResponse.recipes[0]);
+            // Transform the response to match our app's format (with Pexels images)
+            const recipe = await mapSpoonacularRecipeToAppRecipe(apiResponse.recipes[0]);
             return res.status(200).json(recipe);
           } else {
             console.log("No recipes returned from Spoonacular API, falling back to local database");
