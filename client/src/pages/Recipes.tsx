@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import LoadingState from '@/components/LoadingState';
 import ErrorState from '@/components/ErrorState';
-import { Utensils, ExternalLink, X, Clock, Users, ChefHat } from 'lucide-react';
+import { Utensils, ExternalLink, X, Clock, Users, ChefHat, Heart } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { getRecipes, getRandomRecipe } from '@/lib/api';
@@ -49,8 +49,22 @@ function Recipes() {
   
   const [randomRecipe, setRandomRecipe] = useState<Recipe | null>(null);
   const [isLoadingRandom, setIsLoadingRandom] = useState(false);
+  const [favorites, setFavorites] = useState<number[]>([]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  // Load favorites from localStorage on component mount
+  useEffect(() => {
+    const storedFavorites = localStorage.getItem('favorites');
+    if (storedFavorites) {
+      try {
+        setFavorites(JSON.parse(storedFavorites));
+      } catch (e) {
+        console.error("Failed to parse favorites:", e);
+        localStorage.removeItem('favorites');
+      }
+    }
+  }, []);
 
   // Fetch meal types
   const { data: mealTypes = [], isLoading: isMealTypesLoading, error: mealTypesError } = useQuery<MealType[]>({
@@ -110,6 +124,34 @@ function Recipes() {
       />
     );
   }
+  
+  // Toggle favorite status
+  const toggleFavorite = (recipeId: number) => {
+    const isFavorited = favorites.includes(recipeId);
+    let newFavorites: number[];
+    
+    if (isFavorited) {
+      // Remove from favorites
+      newFavorites = favorites.filter(id => id !== recipeId);
+      toast({
+        title: "Removed from favorites",
+        description: "Recipe has been removed from your favorites",
+        duration: 3000,
+      });
+    } else {
+      // Add to favorites
+      newFavorites = [...favorites, recipeId];
+      toast({
+        title: "Added to favorites",
+        description: "Recipe has been added to your favorites",
+        duration: 3000,
+      });
+    }
+    
+    // Update state and localStorage
+    setFavorites(newFavorites);
+    localStorage.setItem('favorites', JSON.stringify(newFavorites));
+  };
 
   const renderRecipeCard = (recipe: Recipe, isRandom: boolean = false) => (
     <Card 
@@ -130,8 +172,24 @@ function Recipes() {
               e.currentTarget.className = "w-full h-full object-contain";
             }}
           />
+          {/* Favorite button */}
+          <button 
+            className={`absolute top-2 right-2 h-8 w-8 rounded-full flex items-center justify-center transition-colors ${
+              favorites.includes(recipe.id) 
+                ? 'bg-primary text-white' 
+                : 'bg-white/80 text-muted-foreground hover:text-primary'
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavorite(recipe.id);
+            }}
+          >
+            <Heart 
+              className={`h-4 w-4 ${favorites.includes(recipe.id) ? 'fill-white' : ''}`} 
+            />
+          </button>
           {isRandom && (
-            <div className="absolute top-2 right-2 bg-gradient text-white px-3 py-1 rounded-full text-xs font-medium shadow-sm backdrop-blur-sm">
+            <div className="absolute top-2 right-12 bg-gradient text-white px-3 py-1 rounded-full text-xs font-medium shadow-sm backdrop-blur-sm">
               Random Pick
             </div>
           )}
@@ -142,8 +200,24 @@ function Recipes() {
           )}
         </div>
       ) : (
-        <div className="w-full h-48 bg-muted flex items-center justify-center">
+        <div className="relative w-full h-48 bg-muted flex items-center justify-center">
           <Utensils className="h-16 w-16 text-muted-foreground opacity-40" />
+          {/* Favorite button for recipes without image */}
+          <button 
+            className={`absolute top-2 right-2 h-8 w-8 rounded-full flex items-center justify-center transition-colors ${
+              favorites.includes(recipe.id) 
+                ? 'bg-primary text-white' 
+                : 'bg-white/80 text-muted-foreground hover:text-primary'
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavorite(recipe.id);
+            }}
+          >
+            <Heart 
+              className={`h-4 w-4 ${favorites.includes(recipe.id) ? 'fill-white' : ''}`} 
+            />
+          </button>
         </div>
       )}
       

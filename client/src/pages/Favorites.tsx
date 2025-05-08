@@ -1,24 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { HeartIcon, TrashIcon, ChefHatIcon, ClockIcon, UtensilsIcon, BadgeCheckIcon, ExternalLinkIcon } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
+import { Bookmark, Heart, ExternalLink, Clock, ChefHat, Users, Utensils, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { getRecipes } from '@/lib/api';
-import { Link } from 'wouter';
-import { Skeleton } from '@/components/ui/skeleton';
+import LoadingState from '@/components/LoadingState';
+import ErrorState from '@/components/ErrorState';
+
+interface Recipe {
+  id: number;
+  title: string;
+  instructions: string;
+  prepTime: number | null;
+  cookTime: number | null;
+  servings: number;
+  calories: number | null;
+  imageUrl: string | null;
+  mealTypeId: number | null;
+  sourceUrl?: string;
+}
 
 function Favorites() {
+  const [favorites, setFavorites] = useState<number[]>([]);
   const { toast } = useToast();
-  const [favorites, setFavorites] = useState<any[]>([]);
   
-  // Get all recipes
-  const { data: recipes, isLoading } = useQuery({
-    queryKey: ['/api/recipes'],
-    queryFn: () => getRecipes({}),
-  });
-
   // Load favorites from localStorage on component mount
   useEffect(() => {
     const storedFavorites = localStorage.getItem('favorites');
@@ -31,176 +37,171 @@ function Favorites() {
       }
     }
   }, []);
-
-  // Get favorite recipes by matching saved recipe IDs with actual recipe data
-  const favoriteRecipes = React.useMemo(() => {
-    if (!recipes || !favorites.length) return [];
-    return recipes.filter((recipe: any) => favorites.includes(recipe.id));
-  }, [recipes, favorites]);
-
-  const removeFromFavorites = (recipeId: number) => {
+  
+  // Fetch all recipes
+  const { data: allRecipes = [], isLoading, error } = useQuery<Recipe[]>({
+    queryKey: ['/api/recipes'],
+    queryFn: async () => {
+      return await getRecipes({
+        useApi: false // Only fetch local recipes to be faster
+      });
+    },
+  });
+  
+  // Filter to show only favorited recipes
+  const favoriteRecipes = allRecipes.filter(recipe => favorites.includes(recipe.id));
+  
+  // Toggle favorite status
+  const toggleFavorite = (recipeId: number) => {
     const newFavorites = favorites.filter(id => id !== recipeId);
     setFavorites(newFavorites);
     localStorage.setItem('favorites', JSON.stringify(newFavorites));
     
     toast({
       title: "Removed from favorites",
-      description: "Recipe has been removed from your favorites.",
+      description: "Recipe has been removed from your favorites",
       duration: 3000,
     });
   };
-
-  const renderRecipeCard = (recipe: any) => {
+  
+  if (isLoading) return <LoadingState />;
+  
+  if (error) {
     return (
-      <Card key={recipe.id} className="hover-card overflow-hidden shadow-sm border-border/60 transition-all">
-        <div className="relative">
-          {/* Recipe image */}
-          <div className="h-48 bg-muted/20 overflow-hidden">
-            {recipe.imageUrl ? (
-              <img 
-                src={recipe.imageUrl} 
-                alt={recipe.title} 
-                className="w-full h-full object-cover transition-transform hover:scale-105"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-primary/5">
-                <ChefHatIcon className="h-12 w-12 text-primary/40" />
-              </div>
-            )}
-          </div>
-          
-          {/* Meal type badge */}
-          {recipe.mealType && (
-            <Badge className="absolute top-2 left-2 bg-primary/90 hover:bg-primary">
-              {recipe.mealType.name}
-            </Badge>
-          )}
-          
-          {/* Remove from favorites button */}
-          <Button
-            size="icon"
-            variant="destructive"
-            className="absolute top-2 right-2 h-8 w-8 rounded-full"
-            onClick={() => removeFromFavorites(recipe.id)}
-          >
-            <TrashIcon className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg line-clamp-1">{recipe.title}</CardTitle>
-          <CardDescription className="line-clamp-2">{recipe.description}</CardDescription>
-        </CardHeader>
-        
-        <CardContent className="pb-3">
-          <div className="flex flex-wrap gap-1 mb-3">
-            {recipe.dietaryRestrictions?.map((restriction: any) => (
-              <Badge key={restriction.id} variant="outline" className="bg-white text-xs">
-                {restriction.name}
-              </Badge>
-            ))}
-          </div>
-          
-          <div className="flex flex-wrap justify-between text-sm text-muted-foreground gap-y-1">
-            <div className="flex items-center">
-              <ClockIcon className="h-3.5 w-3.5 mr-1 text-primary/70" />
-              <span>{recipe.readyInMinutes || "30"} min</span>
-            </div>
-            <div className="flex items-center">
-              <UtensilsIcon className="h-3.5 w-3.5 mr-1 text-primary/70" />
-              <span>{recipe.servings || "2"} servings</span>
-            </div>
-            {recipe.calories && (
-              <div className="flex items-center">
-                <BadgeCheckIcon className="h-3.5 w-3.5 mr-1 text-primary/70" />
-                <span>{recipe.calories} cal</span>
-              </div>
-            )}
-          </div>
-        </CardContent>
-        
-        <CardFooter className="pt-0">
-          <Link href={`/recipes/${recipe.id}`} className="w-full">
-            <Button className="w-full" variant="outline">
-              View Recipe <ExternalLinkIcon className="h-3.5 w-3.5 ml-1.5" />
-            </Button>
-          </Link>
-        </CardFooter>
-      </Card>
+      <ErrorState
+        message="Failed to load recipes"
+        onRetry={() => window.location.reload()}
+      />
     );
-  };
-
+  }
+  
   return (
-    <div className="py-6 space-y-8 container mx-auto">
+    <div className="py-6 space-y-8 container">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gradient">Favorites</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-gradient">Saved Recipes</h1>
           <p className="text-muted-foreground mt-1">
-            Your saved recipes and items
+            Your collection of favorite recipes
           </p>
         </div>
       </div>
-
-      <Card className="hover-card bg-white/70 shadow-sm border-border/60">
-        <CardHeader>
-          <div className="flex flex-row items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <HeartIcon className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <CardTitle>Your Favorite Recipes</CardTitle>
-              <CardDescription>
-                Quick access to recipes you love
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="overflow-hidden shadow-sm border-border/60">
-                  <Skeleton className="h-48 w-full" />
-                  <CardHeader className="pb-2">
-                    <Skeleton className="h-5 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-full" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex gap-2 mb-3">
-                      <Skeleton className="h-5 w-16" />
-                      <Skeleton className="h-5 w-16" />
+      
+      {favoriteRecipes.length === 0 ? (
+        <div className="text-center py-12">
+          <Bookmark className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-40" />
+          <h2 className="text-xl font-medium mb-2">No saved recipes yet</h2>
+          <p className="text-muted-foreground max-w-md mx-auto mb-6">
+            Mark recipes as favorites by clicking the heart icon, and they'll appear here for easy access.
+          </p>
+          <Button 
+            onClick={() => window.location.href = '/recipes'}
+            className="bg-gradient hover:shadow-md transition-all"
+          >
+            Browse Recipes
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          {favoriteRecipes.map((recipe) => (
+            <Card 
+              key={recipe.id} 
+              className="overflow-hidden hover-card"
+            >
+              {recipe.imageUrl ? (
+                <div className="relative w-full h-48 overflow-hidden">
+                  <img 
+                    src={recipe.imageUrl} 
+                    alt={recipe.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // If image fails to load, replace with placeholder
+                      e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2'/%3E%3Cpath d='M7 2v20'/%3E%3Cpath d='M21 15V2'/%3E%3Cpath d='M18 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'/%3E%3Cpath d='M18 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'/%3E%3C/svg%3E";
+                      e.currentTarget.style.padding = "2rem";
+                      e.currentTarget.style.background = "#f1f1f1";
+                      e.currentTarget.className = "w-full h-full object-contain";
+                    }}
+                  />
+                  <button 
+                    className="absolute top-2 right-2 h-8 w-8 rounded-full flex items-center justify-center bg-primary text-white transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(recipe.id);
+                    }}
+                  >
+                    <Heart className="h-4 w-4 fill-white" />
+                  </button>
+                </div>
+              ) : (
+                <div className="relative w-full h-48 bg-muted flex items-center justify-center">
+                  <Utensils className="h-16 w-16 text-muted-foreground opacity-40" />
+                  <button 
+                    className="absolute top-2 right-2 h-8 w-8 rounded-full flex items-center justify-center bg-primary text-white transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(recipe.id);
+                    }}
+                  >
+                    <Heart className="h-4 w-4 fill-white" />
+                  </button>
+                </div>
+              )}
+              
+              <CardHeader className="pb-2 pt-4">
+                <CardTitle className="text-xl font-semibold line-clamp-2 flex items-start justify-between group">
+                  <span>{recipe.title}</span>
+                  {recipe.sourceUrl && (
+                    <a 
+                      href={recipe.sourceUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors ml-2 mt-1 flex-shrink-0"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  )}
+                </CardTitle>
+                
+                <CardDescription className="text-sm font-medium text-accent-foreground">
+                  {recipe.calories ? (
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium">{Math.round(recipe.calories)}</span> calories per serving
                     </div>
-                    <div className="flex justify-between">
-                      <Skeleton className="h-4 w-16" />
-                      <Skeleton className="h-4 w-16" />
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Skeleton className="h-10 w-full" />
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          ) : favoriteRecipes.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {favoriteRecipes.map((recipe: any) => renderRecipeCard(recipe))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <HeartIcon className="h-16 w-16 text-muted-foreground/30 mb-4" />
-              <h3 className="text-xl font-medium mb-2">No favorites yet</h3>
-              <p className="text-muted-foreground max-w-md mb-6">
-                Your favorite recipes will appear here. Browse the recipes section and click the heart icon to save recipes you love.
-              </p>
-              <Link href="/recipes">
-                <Button className="bg-gradient">
-                  Browse Recipes
+                  ) : 'Calories information unavailable'}
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent className="pb-4">
+                <div className="flex justify-between text-sm mb-4 text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-4 w-4" />
+                    <span>Prep: {recipe.prepTime || 'N/A'}m</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <ChefHat className="h-4 w-4" />
+                    <span>Cook: {recipe.cookTime || 'N/A'}m</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Users className="h-4 w-4" />
+                    <span>Serves: {recipe.servings}</span>
+                  </div>
+                </div>
+              </CardContent>
+              
+              <CardFooter className="pt-0">
+                <Button 
+                  className="w-full bg-gradient hover:shadow-md transition-all"
+                  onClick={() => {
+                    // Open the recipe in a modal or redirect to a dedicated page
+                    window.open(recipe.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(recipe.title)}+recipe`, '_blank');
+                  }}
+                >
+                  View Recipe
                 </Button>
-              </Link>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
