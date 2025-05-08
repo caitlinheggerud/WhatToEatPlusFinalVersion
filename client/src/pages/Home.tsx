@@ -82,13 +82,18 @@ export default function Home() {
     <div>
       {state === "upload" && (
         <div className="space-y-8 pb-8">
-          <HeroSection onScanClick={() => document.getElementById('fileUpload')?.click()} />
-          <div className="hidden">
-            <UploadSection 
-              onFileSelect={handleFileSelect}
-              onAnalyze={handleAnalyze}
-              showAnalyzeButton={false}
-            />
+          <div className="container max-w-4xl mx-auto mt-8">
+            <div className="rounded-lg border bg-card p-8 shadow">
+              <h2 className="text-xl font-semibold mb-4">Upload Receipt</h2>
+              <p className="text-muted-foreground mb-6">
+                Upload your receipt photo and let AI automatically recognize items and prices.
+              </p>
+              <UploadSection 
+                onFileSelect={handleFileSelect}
+                onAnalyze={handleAnalyze}
+                showAnalyzeButton={false}
+              />
+            </div>
           </div>
         </div>
       )}

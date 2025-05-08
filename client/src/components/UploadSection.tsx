@@ -42,7 +42,7 @@ export default function UploadSection({
       if (file.type === "image/jpeg" || file.type === "image/png") {
         onFileSelect(file);
       } else {
-        alert("请上传JPG或PNG格式的图片");
+        alert("Please upload a JPG or PNG image");
       }
     }
   };
@@ -60,7 +60,7 @@ export default function UploadSection({
           <ImageIcon className="h-8 w-8 text-primary" />
         </div>
         <p className="text-lg font-medium mb-2">Upload Receipt Image</p>
-        <p className="text-sm text-muted-foreground mb-4">Click or drag & drop to upload</p>
+        <p className="text-sm text-muted-foreground mb-4">Click or drag and drop to upload</p>
         <Button className="bg-primary hover:bg-primary/90">
           <Upload className="mr-2 h-4 w-4" />
           Select Image
