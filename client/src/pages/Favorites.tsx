@@ -25,58 +25,78 @@ function Favorites() {
   const [favorites, setFavorites] = useState<number[]>([]);
   const { toast } = useToast();
   
+  // Get query client for manual refetching
+  const queryClient = useQueryClient();
+  
   // Load favorites from localStorage on component mount
   useEffect(() => {
     const storedFavorites = localStorage.getItem('favorites');
     if (storedFavorites) {
       try {
-        setFavorites(JSON.parse(storedFavorites));
+        const parsedFavorites = JSON.parse(storedFavorites);
+        setFavorites(parsedFavorites);
+        
+        // If we have favorites, manually refetch the recipes query
+        if (parsedFavorites && parsedFavorites.length > 0) {
+          queryClient.invalidateQueries({ queryKey: ['/api/recipes', 'favorites'] });
+        }
       } catch (e) {
         console.error("Failed to parse favorites:", e);
         localStorage.removeItem('favorites');
       }
     }
-  }, []);
+  }, [queryClient]);
   
   // Fetch all recipes
   const { data: allRecipes = [], isLoading, error } = useQuery<Recipe[]>({
     queryKey: ['/api/recipes', 'favorites'],
     queryFn: async () => {
-      // First try to get local recipes
-      const localRecipes = await getRecipes({
-        useApi: false // Get local recipes first
-      });
-      
-      // If we have favorites from external APIs, try to get those too
-      let externalRecipes: Recipe[] = [];
-      const storedRecipeData = localStorage.getItem('favoriteRecipeData');
-      
-      if (storedRecipeData) {
-        try {
-          const parsedData = JSON.parse(storedRecipeData);
-          if (Array.isArray(parsedData)) {
-            externalRecipes = parsedData;
+      try {
+        // First try to get local recipes
+        const localRecipes = await getRecipes({
+          useApi: false // Get local recipes first
+        });
+        
+        // If we have favorites from external APIs, try to get those too
+        let externalRecipes: Recipe[] = [];
+        const storedRecipeData = localStorage.getItem('favoriteRecipeData');
+        
+        if (storedRecipeData) {
+          try {
+            const parsedData = JSON.parse(storedRecipeData);
+            if (Array.isArray(parsedData)) {
+              externalRecipes = parsedData;
+            }
+          } catch (e) {
+            console.error("Failed to parse favorite recipe data:", e);
           }
-        } catch (e) {
-          console.error("Failed to parse favorite recipe data:", e);
         }
+        
+        // Combine both sources, avoiding duplicates by ID
+        const allRecipes = [...localRecipes];
+        
+        externalRecipes.forEach(externalRecipe => {
+          if (!allRecipes.some(recipe => recipe.id === externalRecipe.id)) {
+            allRecipes.push(externalRecipe);
+          }
+        });
+        
+        console.log("All recipes loaded:", allRecipes.length);
+        console.log("Favorites IDs:", favorites);
+        
+        return allRecipes;
+      } catch (error) {
+        console.error("Error fetching recipes in Favorites:", error);
+        return [];
       }
-      
-      // Combine both sources, avoiding duplicates by ID
-      const allRecipes = [...localRecipes];
-      
-      externalRecipes.forEach(externalRecipe => {
-        if (!allRecipes.some(recipe => recipe.id === externalRecipe.id)) {
-          allRecipes.push(externalRecipe);
-        }
-      });
-      
-      return allRecipes;
     },
+    enabled: favorites.length > 0, // Only run query if we have favorites
   });
   
   // Filter to show only favorited recipes
   const favoriteRecipes = allRecipes.filter(recipe => favorites.includes(recipe.id));
+  
+  console.log("Filtered favorite recipes:", favoriteRecipes.length);
   
   // Toggle favorite status
   const toggleFavorite = (recipeId: number) => {
