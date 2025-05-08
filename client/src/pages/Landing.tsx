@@ -9,7 +9,7 @@ function Landing() {
     <div className="min-h-[calc(100vh-4rem)] flex flex-col">
       {/* Hero Section */}
       <section className="py-12 md:py-20 flex flex-col items-center">
-        <div className="container px-4 md:px-6">
+        <div className="container mx-auto px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             {/* App Logo */}
             <div className="h-16 w-16 rounded-full bg-gradient flex items-center justify-center text-white mb-4">
@@ -47,7 +47,7 @@ function Landing() {
 
       {/* Features Section */}
       <section className="py-12 bg-muted/30">
-        <div className="container px-4 md:px-6">
+        <div className="container mx-auto px-4 md:px-6">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
             Why use <span className="text-gradient">WhatToEat+</span>?
           </h2>
@@ -97,7 +97,7 @@ function Landing() {
 
       {/* Call-to-action Section */}
       <section className="py-16 bg-gradient text-white">
-        <div className="container px-4 md:px-6 text-center">
+        <div className="container mx-auto px-4 md:px-6 text-center">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to get started?</h2>
           <p className="max-w-[600px] mx-auto mb-8 text-white/90">
             Join thousands of users who have transformed the way they plan meals and manage food expenses.
@@ -113,7 +113,7 @@ function Landing() {
       
       {/* Footer */}
       <footer className="py-6 bg-background border-t border-border/40">
-        <div className="container px-4 md:px-6 flex flex-col md:flex-row justify-between items-center">
+        <div className="container mx-auto px-4 md:px-6 flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center gap-2 mb-4 md:mb-0">
             <div className="h-8 w-8 rounded-md flex items-center justify-center bg-gradient text-white">
               <UtensilsCrossedIcon className="h-5 w-5" />
