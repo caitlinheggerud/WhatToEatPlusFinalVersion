@@ -74,9 +74,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           - "price": Price with currency symbol
           - "category": One of these categories: Food, Beverage, Household, Clothing, Electronics, Personal Care, Others
           
-          If there's a GST or tax entry, include it as:
-          - "name": "GST" or whatever tax label is on the receipt
-          - "description": "Goods and Services Tax" or similar
+          VERY IMPORTANT: Look carefully for GST (Goods and Services Tax) or any tax amount on the receipt. 
+          It may appear as a separate line near the total or subtotal. Even if it's small or partially visible, 
+          include it as a separate item like this:
+          - "name": "GST" 
+          - "description": "Goods and Services Tax"
           - "price": The exact tax amount with currency symbol
           - "category": "Tax"
           
@@ -93,7 +95,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             {"name": "TOTAL", "description": "Total Payment", "price": "$11.00", "category": "Total"}
           ]
           
-          Provide nothing but the properly formatted JSON array.
+          Provide nothing but the properly formatted JSON array. Make sure to include the GST entry if it appears on the receipt.
         `;
 
         // Generate content with Gemini
@@ -121,6 +123,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (startIdx !== -1 && endIdx !== -1) {
             jsonText = jsonText.substring(startIdx, endIdx + 1);
           }
+        }
+        
+        // If GST isn't found in the response, check if subtotal and total differ, and calculate GST
+        try {
+          // First parse without modifying to see if GST is included
+          const prelimItems = JSON.parse(jsonText);
+          
+          // Check if GST is missing
+          const hasGst = prelimItems.some(item => 
+            item.category === 'Tax' || 
+            ['GST', 'TAX', 'VAT'].includes(String(item.name).toUpperCase())
+          );
+          
+          if (!hasGst) {
+            // Find subtotal and total items
+            const regularItems = prelimItems.filter(item => 
+              item.category !== 'Total' && 
+              !['TOTAL', 'AMOUNT', 'PAYMENT'].includes(String(item.name).toUpperCase())
+            );
+            
+            const totalItem = prelimItems.find(item => 
+              item.category === 'Total' || 
+              ['TOTAL', 'AMOUNT', 'PAYMENT'].includes(String(item.name).toUpperCase())
+            );
+            
+            if (totalItem) {
+              // Calculate subtotal
+              const subtotal = regularItems.reduce((sum, item) => {
+                const priceValue = parseFloat(String(item.price).replace(/[^\d.-]/g, ''));
+                return sum + (isNaN(priceValue) ? 0 : priceValue);
+              }, 0);
+              
+              // Get total value
+              const totalValue = parseFloat(String(totalItem.price).replace(/[^\d.-]/g, ''));
+              
+              // If total > subtotal, the difference might be GST
+              if (totalValue > subtotal) {
+                const possibleGst = totalValue - subtotal;
+                
+                // Get currency symbol from the first item
+                const currencySymbol = regularItems.length > 0 ? 
+                  String(regularItems[0].price).replace(/[\d.-]/g, '').trim() || '$' : 
+                  '$';
+                
+                // Add GST item to the items array
+                prelimItems.push({
+                  "name": "GST",
+                  "description": "Goods and Services Tax",
+                  "price": `${currencySymbol}${possibleGst.toFixed(2)}`,
+                  "category": "Tax"
+                });
+                
+                // Update jsonText with the new array including GST
+                jsonText = JSON.stringify(prelimItems);
+              }
+            }
+          }
+        } catch (e) {
+          // If preliminary parsing fails, continue with original jsonText
+          console.log("Preliminary parsing for GST calculation failed:", e);
         }
         
         try {
