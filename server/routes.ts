@@ -66,36 +66,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Prepare the prompt for Gemini API
         const prompt = `
-          Analyze this receipt and extract the following information as a valid JSON array:
+          Analyze this receipt and extract the items, GST (tax), and total in a simple JSON format.
           
-          For each item on the receipt, include:
-          - "name": The product name (expand any abbreviations)
-          - "description": Brand, size, or other details (or null if none)
-          - "price": Price with currency symbol
-          - "category": One of these categories: Food, Beverage, Household, Clothing, Electronics, Personal Care, Others
+          Format each regular item as:
+          {"name": "Item Name", "description": "Details if any", "price": "$XX.XX", "category": "Food/Beverage/etc"}
           
-          VERY IMPORTANT: Look carefully for GST (Goods and Services Tax) or any tax amount on the receipt. 
-          It may appear as a separate line near the total or subtotal. Even if it's small or partially visible, 
-          include it as a separate item like this:
-          - "name": "GST" 
-          - "description": "Goods and Services Tax"
-          - "price": The exact tax amount with currency symbol
-          - "category": "Tax"
+          Be sure to include GST/tax (very important):
+          {"name": "GST", "description": "Goods and Services Tax", "price": "$X.XX", "category": "Tax"}
           
-          If there's a total amount, include it as:
-          - "name": "TOTAL"
-          - "description": "Total Payment"
-          - "price": The total amount with currency symbol
-          - "category": "Total"
+          And the total:
+          {"name": "TOTAL", "description": "Total Payment", "price": "$XX.XX", "category": "Total"}
           
-          Format your response ONLY as a valid JSON array like this:
+          Return ONLY a properly formatted JSON array with no explanations:
           [
-            {"name": "Item 1", "description": "Description 1", "price": "$10.00", "category": "Food"},
+            {"name": "First Item", "description": "Description", "price": "$10.00", "category": "Food"},
             {"name": "GST", "description": "Goods and Services Tax", "price": "$1.00", "category": "Tax"},
             {"name": "TOTAL", "description": "Total Payment", "price": "$11.00", "category": "Total"}
           ]
-          
-          Provide nothing but the properly formatted JSON array. Make sure to include the GST entry if it appears on the receipt.
         `;
 
         // Generate content with Gemini
@@ -124,6 +111,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
             jsonText = jsonText.substring(startIdx, endIdx + 1);
           }
         }
+        
+        // Advanced JSON cleaning for common errors
+        // Fix missing commas between objects
+        jsonText = jsonText.replace(/}(\s*){/g, '},{');
+        
+        // Fix trailing commas
+        jsonText = jsonText.replace(/,(\s*)}]/g, '}]');
+        jsonText = jsonText.replace(/,(\s*)]/g, ']');
+        
+        // Fix missing quotes around property names
+        jsonText = jsonText.replace(/([{,]\s*)([a-zA-Z0-9_]+)(\s*:)/g, '$1"$2"$3');
+        
+        // Fix unescaped quotes in strings
+        const fixStringQuotes = (text) => {
+          const regex = /"([^"\\]*(\\.[^"\\]*)*)":/g;
+          let result = text;
+          let match;
+          
+          while ((match = regex.exec(text)) !== null) {
+            const propName = match[1];
+            // After property name and colon, find the value
+            const afterColon = text.substring(match.index + match[0].length).trim();
+            if (afterColon.startsWith('"')) {
+              // Find the end of the string value
+              let valueEnd = afterColon.indexOf('",', 1);
+              if (valueEnd === -1) valueEnd = afterColon.indexOf('"}', 1);
+              if (valueEnd === -1) valueEnd = afterColon.indexOf('"]', 1);
+              
+              if (valueEnd !== -1) {
+                const value = afterColon.substring(1, valueEnd);
+                const escapedValue = value.replace(/"/g, '\\"');
+                result = result.replace(`"${propName}": "${value}"`, `"${propName}": "${escapedValue}"`);
+              }
+            }
+          }
+          return result;
+        };
+        
+        jsonText = fixStringQuotes(jsonText);
+        
+        // Log the cleaned JSON
+        console.log("Cleaned JSON:", jsonText);
         
         // If GST isn't found in the response, check if subtotal and total differ, and calculate GST
         try {
