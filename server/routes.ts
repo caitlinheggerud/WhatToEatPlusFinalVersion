@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
@@ -9,6 +9,11 @@ import { fromZodError } from "zod-validation-error";
 import fs from "fs";
 import path from "path";
 import os from "os";
+
+// Extended Request type to include file from multer
+interface RequestWithFile extends Request {
+  file?: Express.Multer.File;
+}
 
 // Configure multer for file uploads
 const upload = multer({
@@ -40,13 +45,13 @@ const upload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configure Gemini API
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-vision" });
 
   // Receipt image upload and analysis endpoint
   app.post(
     "/api/receipts/analyze", 
     upload.single('receipt'), 
-    async (req: Request, res: Response) => {
+    async (req: RequestWithFile, res: Response) => {
       try {
         if (!req.file) {
           return res.status(400).json({ message: "No file uploaded" });
