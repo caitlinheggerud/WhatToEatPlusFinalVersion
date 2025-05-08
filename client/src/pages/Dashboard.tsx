@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { DownloadIcon, PieChartIcon, BarChartIcon, CalendarIcon, FilterIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { type ReceiptItemResponse } from "@shared/schema";
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 export default function Dashboard() {
   const [receipts, setReceipts] = useState<ReceiptItemResponse[]>([]);
@@ -46,14 +47,16 @@ export default function Dashboard() {
 
   // Calculate total by category
   const categoryTotals = categories.reduce((acc, category) => {
-    const total = receipts
-      .filter(item => item.category === category)
-      .reduce((sum, item) => {
-        const price = parseFloat(item.price.replace(/[^0-9.-]+/g, ""));
-        return sum + (isNaN(price) ? 0 : price);
-      }, 0);
-    
-    acc[category] = total.toFixed(2);
+    if (category) { // Make sure category is not undefined
+      const total = receipts
+        .filter(item => item.category === category)
+        .reduce((sum, item) => {
+          const price = parseFloat(item.price.replace(/[^0-9.-]+/g, ""));
+          return sum + (isNaN(price) ? 0 : price);
+        }, 0);
+      
+      acc[category] = total.toFixed(2);
+    }
     return acc;
   }, {} as Record<string, string>);
 
@@ -63,8 +66,10 @@ export default function Dashboard() {
     return sum + (isNaN(price) ? 0 : price);
   }, 0).toFixed(2);
 
-  const handleCategoryClick = (category: string) => {
-    setActiveCategory(activeCategory === category ? null : category);
+  const handleCategoryClick = (category: string | undefined) => {
+    if (category) {
+      setActiveCategory(activeCategory === category ? null : category);
+    }
   };
 
   return (
@@ -139,7 +144,7 @@ export default function Dashboard() {
               {categories.map(category => (
                 <Badge
                   key={category}
-                  variant={activeCategory === category ? "default" : "outline"}
+                  variant={category && activeCategory === category ? "default" : "outline"}
                   className="cursor-pointer"
                   onClick={() => handleCategoryClick(category)}
                 >
@@ -181,38 +186,169 @@ export default function Dashboard() {
           </TabsContent>
           
           <TabsContent value="charts" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Expense Breakdown</CardTitle>
-                <CardDescription>
-                  Visualize your expenses by category
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pl-2">
-                <div className="h-[300px] w-full flex items-center justify-center">
-                  <div className="text-center">
-                    <BarChartIcon className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
-                    <p className="text-muted-foreground">Charts will be implemented soon</p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Expense by Category</CardTitle>
+                  <CardDescription>
+                    Distribution of expenses across categories
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px] w-full">
+                    {categories.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={categories.filter(c => c).map(category => ({
+                              name: category,
+                              value: parseFloat(categoryTotals[category!] || "0")
+                            }))}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                            nameKey="name"
+                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {categories.filter(c => c).map((category, index) => (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={
+                                  category === "Food" ? "#10b981" : 
+                                  category === "Household" ? "#3b82f6" : 
+                                  category === "Tax" ? "#f43f5e" :
+                                  category === "Total" ? "#8b5cf6" :
+                                  `#${Math.floor(Math.random() * 16777215).toString(16)}`
+                                } 
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-full flex items-center justify-center">
+                        <p className="text-muted-foreground">No data available</p>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Expenses by Category</CardTitle>
+                  <CardDescription>
+                    Comparison of total spending by category
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px] w-full">
+                    {categories.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart 
+                          data={categories.filter(c => c && c !== "Total").map(category => ({
+                            name: category,
+                            amount: parseFloat(categoryTotals[category!] || "0")
+                          }))}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
+                          <Bar dataKey="amount" fill="#8884d8">
+                            {categories.filter(c => c && c !== "Total").map((category, index) => (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={
+                                  category === "Food" ? "#10b981" : 
+                                  category === "Household" ? "#3b82f6" : 
+                                  category === "Tax" ? "#f43f5e" :
+                                  `#${Math.floor(Math.random() * 16777215).toString(16)}`
+                                } 
+                              />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-full flex items-center justify-center">
+                        <p className="text-muted-foreground">No data available</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
           
           <TabsContent value="reports" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Monthly Reports</CardTitle>
+                <CardTitle>Monthly Expense Report</CardTitle>
                 <CardDescription>
                   Generate and download monthly expense reports
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-[300px] w-full flex items-center justify-center">
-                  <div className="text-center">
-                    <DownloadIcon className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
-                    <p className="text-muted-foreground">Reports will be implemented soon</p>
-                    <Button className="mt-4" variant="outline">
+                <div className="space-y-6">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Report Period</label>
+                      <select className="w-full p-2 border rounded-md">
+                        <option>May 2025</option>
+                        <option>April 2025</option>
+                        <option>March 2025</option>
+                        <option>Custom Range</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Report Format</label>
+                      <select className="w-full p-2 border rounded-md">
+                        <option>PDF Document</option>
+                        <option>Excel Spreadsheet</option>
+                        <option>CSV File</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Include Categories</label>
+                    <div className="flex flex-wrap gap-2">
+                      {categories.map(category => category && (
+                        <div key={category} className="flex items-center space-x-2">
+                          <input type="checkbox" id={`cat-${category}`} defaultChecked />
+                          <label htmlFor={`cat-${category}`} className="text-sm">{category}</label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Report Options</label>
+                    <div className="flex flex-wrap gap-4">
+                      <div className="flex items-center space-x-2">
+                        <input type="checkbox" id="include-charts" defaultChecked />
+                        <label htmlFor="include-charts" className="text-sm">Include Charts</label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input type="checkbox" id="include-summary" defaultChecked />
+                        <label htmlFor="include-summary" className="text-sm">Include Summary</label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input type="checkbox" id="include-details" defaultChecked />
+                        <label htmlFor="include-details" className="text-sm">Include Item Details</label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4 flex justify-center">
+                    <Button className="w-full md:w-auto">
+                      <DownloadIcon className="mr-2 h-4 w-4" />
                       Generate Report
                     </Button>
                   </div>
