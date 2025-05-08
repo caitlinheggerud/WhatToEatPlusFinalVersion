@@ -83,8 +83,10 @@ function Recipes() {
       setIsLoadingRandom(true);
       const randomRecipeData = await getRandomRecipe({
         mealTypeId: filters.mealTypeId,
+        dietaryRestrictions: [], // Pass empty array to avoid undefined
         useApi: filters.useApi,
-        allergies: filters.allergies
+        allergies: filters.allergies,
+        inventoryBased: filters.inventoryBased
       });
       setRandomRecipe(randomRecipeData);
     } catch (error) {
