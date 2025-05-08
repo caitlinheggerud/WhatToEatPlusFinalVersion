@@ -35,7 +35,7 @@ export function Navbar() {
   }, []);
 
   const navItems = [
-    { name: "Dashboard", href: "/", icon: BarChart3Icon },
+    { name: "Dashboard", href: "/dashboard", icon: BarChart3Icon },
     { name: "Recipes", href: "/recipes", icon: UtensilsCrossedIcon },
     { name: "Receipts", href: "/receipts", icon: ReceiptIcon },
     { name: "Inventory", href: "/inventory", icon: ShoppingBasketIcon },
@@ -59,10 +59,7 @@ export function Navbar() {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-1">
           {navItems.map(({ name, href, icon: Icon }) => {
-            const isActive = (
-              href === "/" && (location === "/" || location === "") ||
-              location === href
-            );
+            const isActive = location === href;
             
             return (
               <Link href={href} key={name}>
@@ -167,10 +164,7 @@ export function Navbar() {
               
               <nav className="flex flex-col space-y-1 mb-8">
                 {navItems.map(({ name, href, icon: Icon }) => {
-                  const isActive = (
-                    href === "/" && (location === "/" || location === "") ||
-                    location === href
-                  );
+                  const isActive = location === href;
                   
                   return (
                     <Link href={href} key={name}>

@@ -11,13 +11,15 @@ import Receipts from "@/pages/Receipts";
 import Profile from "@/pages/Profile";
 import Favorites from "@/pages/Favorites";
 import Settings from "@/pages/Settings";
+import Landing from "@/pages/Landing";
 import { Navbar } from "@/components/ui/navbar";
 import { Toaster } from "@/components/ui/toaster";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard}/>
+      <Route path="/" component={Landing}/>
+      <Route path="/dashboard" component={Dashboard}/>
       <Route path="/upload" component={Home}/>
       <Route path="/inventory" component={Inventory}/>
       <Route path="/recipes" component={Recipes}/>
@@ -36,7 +38,7 @@ function App() {
       <TooltipProvider>
         <div className="flex min-h-screen flex-col bg-background">
           <Navbar />
-          <main className="flex-1 container mx-auto">
+          <main className="flex-1">
             <Router />
           </main>
         </div>
