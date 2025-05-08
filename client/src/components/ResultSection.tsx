@@ -1,23 +1,18 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { type ReceiptItemResponse } from "@shared/schema";
 
 interface ResultSectionProps {
   items: ReceiptItemResponse[];
   onNewUpload: () => void;
   onSaveResults: () => void;
-  askForTotalAmount?: boolean;
 }
 
 export default function ResultSection({ 
   items, 
   onNewUpload,
-  onSaveResults,
-  askForTotalAmount = false
+  onSaveResults
 }: ResultSectionProps) {
   // Format currency for display with the same symbol as in the first item
   const currencySymbol = items.length > 0 ? 
@@ -52,32 +47,14 @@ export default function ResultSection({
     parseFloat(gstItem.price.replace(/[^\d.-]/g, '')) : 
     0;
   
-  // Get total value from totalItem
-  const totalValue = totalItem ? 
-    parseFloat(totalItem.price.replace(/[^\d.-]/g, '')) : 
-    0;
+  // Calculate GST if not found (7% of subtotal)
+  const calculatedGst = gstAmount || (subtotal * 0.07);
   
-  // Calculate GST as the difference between total and subtotal, if totalItem exists
-  // Otherwise, use provided GST amount or 0
-  const calculatedGst = totalItem && totalValue > subtotal
-    ? totalValue - subtotal  // Calculate GST as the difference
-    : gstAmount || 0;        // Use existing GST or 0
-  
-  // State for manual total input
-  const [manualTotal, setManualTotal] = useState<string>('');
-  const [manualTotalEntered, setManualTotalEntered] = useState<boolean>(false);
-  
-  // Calculate total with GST
+  // Get total from totalItem or calculate it (subtotal + GST)
   const calculatedTotal = subtotal + calculatedGst;
-  
-  // Display either the total from the receipt, manual input, or the calculated total
-  const displayTotal = manualTotalEntered ? parseFloat(manualTotal) :
-                       totalItem ? totalValue : calculatedTotal;
-                       
-  // Calculate GST based on manually entered total if provided
-  const effectiveGst = manualTotalEntered && parseFloat(manualTotal) > 0 
-    ? parseFloat(manualTotal) - subtotal
-    : calculatedGst;
+  const displayTotal = totalItem ? 
+    parseFloat(totalItem.price.replace(/[^\d.-]/g, '')) : 
+    calculatedTotal;
   
   return (
     <div>
@@ -116,48 +93,13 @@ export default function ResultSection({
               </span>
             </div>
             
-            {/* Always show GST - calculate from total-subtotal if needed */}
+            {/* Always show GST - if none found, calculate as 7% */}
             <div className="flex justify-between items-center mt-2">
-              <span className="font-medium text-gray-700">{gstItem ? gstItem.name : "GST"}</span>
+              <span className="font-medium text-gray-700">{gstItem ? gstItem.name : "GST (7%)"}</span>
               <span className="font-medium text-gray-700">
-                {`${currencySymbol}${effectiveGst.toFixed(2)}`}
+                {`${currencySymbol}${(gstItem ? gstAmount : calculatedGst).toFixed(2)}`}
               </span>
             </div>
-            
-            {/* Allow manual total entry if needed */}
-            {askForTotalAmount && !totalItem && (
-              <div className="mt-4 mb-3">
-                <Label htmlFor="total-amount" className="text-sm font-medium">
-                  Enter Total Payment Amount:
-                </Label>
-                <div className="flex mt-1 space-x-2">
-                  <Input
-                    id="total-amount"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder={`${currencySymbol}${calculatedTotal.toFixed(2)}`}
-                    value={manualTotal}
-                    onChange={(e) => setManualTotal(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button 
-                    onClick={() => {
-                      if (manualTotal && !isNaN(parseFloat(manualTotal)) && parseFloat(manualTotal) > 0) {
-                        setManualTotalEntered(true);
-                      }
-                    }}
-                    className="bg-primary"
-                    type="button"
-                  >
-                    Apply
-                  </Button>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Gemini API 识别到的总额可能只是商品条目相加，而不是实际付款金额。请输入正确的付款总额。
-                </p>
-              </div>
-            )}
             
             <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-200">
               <span className="font-semibold">Total</span>
