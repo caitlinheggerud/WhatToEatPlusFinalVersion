@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import { ThemeProvider } from "next-themes";
 
 // Set page title and meta description
 document.title = "Receipt Scanner App";
@@ -25,4 +26,8 @@ ogType.setAttribute('property', 'og:type');
 ogType.content = 'website';
 document.head.appendChild(ogType);
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <ThemeProvider attribute="class">
+    <App />
+  </ThemeProvider>
+);

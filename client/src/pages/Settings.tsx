@@ -1,11 +1,147 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SettingsIcon, BellIcon, ShieldIcon, UserIcon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 
 function Settings() {
+  const { toast } = useToast();
+  
+  // Storage keys for settings
+  const STORAGE_KEYS = {
+    DARK_MODE: 'app-dark-mode',
+    HIGH_CONTRAST: 'app-high-contrast',
+    EMAIL_NOTIFICATIONS: 'app-email-notifications',
+    PUSH_NOTIFICATIONS: 'app-push-notifications',
+    DATA_COLLECTION: 'app-data-collection',
+    THIRD_PARTY_SHARING: 'app-third-party-sharing'
+  };
+
+  // State for different settings
+  const [darkMode, setDarkMode] = useState(false);
+  const [highContrast, setHighContrast] = useState(false);
+  const [emailNotifications, setEmailNotifications] = useState(false);
+  const [pushNotifications, setPushNotifications] = useState(false);
+  const [dataCollection, setDataCollection] = useState(false);
+  const [thirdPartySharing, setThirdPartySharing] = useState(false);
+
+  // Load settings from localStorage
+  useEffect(() => {
+    // Load settings from localStorage
+    const savedDarkMode = localStorage.getItem(STORAGE_KEYS.DARK_MODE) === 'true';
+    setDarkMode(savedDarkMode);
+    
+    // Apply dark mode class if needed
+    if (savedDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    setHighContrast(localStorage.getItem(STORAGE_KEYS.HIGH_CONTRAST) === 'true');
+    setEmailNotifications(localStorage.getItem(STORAGE_KEYS.EMAIL_NOTIFICATIONS) === 'true');
+    setPushNotifications(localStorage.getItem(STORAGE_KEYS.PUSH_NOTIFICATIONS) === 'true');
+    setDataCollection(localStorage.getItem(STORAGE_KEYS.DATA_COLLECTION) === 'true');
+    setThirdPartySharing(localStorage.getItem(STORAGE_KEYS.THIRD_PARTY_SHARING) === 'true');
+  }, []);
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    const newValue = !darkMode;
+    setDarkMode(newValue);
+    localStorage.setItem(STORAGE_KEYS.DARK_MODE, String(newValue));
+    
+    // Apply dark mode class to html element
+    if (newValue) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    toast({
+      title: newValue ? 'Dark Mode Enabled' : 'Light Mode Enabled',
+      description: `Application appearance updated to ${newValue ? 'dark' : 'light'} mode.`,
+      duration: 3000,
+    });
+  };
+
+  // Handle high contrast toggle
+  const toggleHighContrast = () => {
+    const newValue = !highContrast;
+    setHighContrast(newValue);
+    localStorage.setItem(STORAGE_KEYS.HIGH_CONTRAST, String(newValue));
+    
+    // Apply high contrast class to body
+    if (newValue) {
+      document.body.classList.add('high-contrast');
+    } else {
+      document.body.classList.remove('high-contrast');
+    }
+    
+    toast({
+      title: newValue ? 'High Contrast Enabled' : 'High Contrast Disabled',
+      description: `Display contrast has been ${newValue ? 'increased' : 'set to normal'}.`,
+      duration: 3000,
+    });
+  };
+
+  // Toggle email notifications
+  const toggleEmailNotifications = () => {
+    const newValue = !emailNotifications;
+    setEmailNotifications(newValue);
+    localStorage.setItem(STORAGE_KEYS.EMAIL_NOTIFICATIONS, String(newValue));
+    
+    toast({
+      title: newValue ? 'Email Notifications Enabled' : 'Email Notifications Disabled',
+      description: `You will ${newValue ? 'now' : 'no longer'} receive recipe recommendations via email.`,
+      duration: 3000,
+    });
+  };
+
+  // Toggle push notifications
+  const togglePushNotifications = () => {
+    const newValue = !pushNotifications;
+    setPushNotifications(newValue);
+    localStorage.setItem(STORAGE_KEYS.PUSH_NOTIFICATIONS, String(newValue));
+    
+    toast({
+      title: newValue ? 'Push Notifications Enabled' : 'Push Notifications Disabled',
+      description: `You will ${newValue ? 'now' : 'no longer'} receive push notifications.`,
+      duration: 3000,
+    });
+  };
+
+  // Toggle data collection
+  const toggleDataCollection = () => {
+    const newValue = !dataCollection;
+    setDataCollection(newValue);
+    localStorage.setItem(STORAGE_KEYS.DATA_COLLECTION, String(newValue));
+    
+    toast({
+      title: newValue ? 'Data Collection Enabled' : 'Data Collection Disabled',
+      description: `Usage data collection has been ${newValue ? 'enabled' : 'disabled'}.`,
+      duration: 3000,
+    });
+  };
+
+  // Toggle third-party sharing
+  const toggleThirdPartySharing = () => {
+    const newValue = !thirdPartySharing;
+    setThirdPartySharing(newValue);
+    localStorage.setItem(STORAGE_KEYS.THIRD_PARTY_SHARING, String(newValue));
+    
+    toast({
+      title: newValue ? 'Data Sharing Enabled' : 'Data Sharing Disabled',
+      description: `Third-party data sharing has been ${newValue ? 'enabled' : 'disabled'}.`,
+      duration: 3000,
+    });
+  };
+
+  // Don't render until after mounting to prevent hydration mismatch
+  if (!mounted) return null;
+
   return (
     <div className="py-6 space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
@@ -17,7 +153,7 @@ function Settings() {
         </div>
       </div>
 
-      <Card className="hover-card bg-white/70 shadow-sm border-border/60">
+      <Card className="hover-card bg-white/70 shadow-sm border-border/60 dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
           <div className="flex flex-row items-center gap-2">
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -55,7 +191,10 @@ function Settings() {
                       Toggle between light and dark themes
                     </p>
                   </div>
-                  <Switch disabled />
+                  <Switch 
+                    checked={theme === 'dark'} 
+                    onCheckedChange={toggleDarkMode} 
+                  />
                 </div>
                 
                 <div className="flex items-center justify-between py-3 border-t">
@@ -65,11 +204,10 @@ function Settings() {
                       Increase contrast for better visibility
                     </p>
                   </div>
-                  <Switch disabled />
-                </div>
-                
-                <div className="mt-4 text-center text-sm text-muted-foreground">
-                  This feature will be available in a future update.
+                  <Switch 
+                    checked={highContrast} 
+                    onCheckedChange={toggleHighContrast} 
+                  />
                 </div>
               </div>
             </TabsContent>
@@ -90,7 +228,10 @@ function Settings() {
                       Receive recipe recommendations via email
                     </p>
                   </div>
-                  <Switch disabled />
+                  <Switch 
+                    checked={emailNotifications} 
+                    onCheckedChange={toggleEmailNotifications} 
+                  />
                 </div>
                 
                 <div className="flex items-center justify-between py-3 border-t">
@@ -100,11 +241,10 @@ function Settings() {
                       Get alerts about new features and updates
                     </p>
                   </div>
-                  <Switch disabled />
-                </div>
-                
-                <div className="mt-4 text-center text-sm text-muted-foreground">
-                  Notification settings will be available in a future update.
+                  <Switch 
+                    checked={pushNotifications} 
+                    onCheckedChange={togglePushNotifications} 
+                  />
                 </div>
               </div>
             </TabsContent>
@@ -125,7 +265,10 @@ function Settings() {
                       Allow app to collect usage data to improve experience
                     </p>
                   </div>
-                  <Switch disabled />
+                  <Switch 
+                    checked={dataCollection} 
+                    onCheckedChange={toggleDataCollection} 
+                  />
                 </div>
                 
                 <div className="flex items-center justify-between py-3 border-t">
@@ -135,11 +278,10 @@ function Settings() {
                       Control data sharing with third-party services
                     </p>
                   </div>
-                  <Switch disabled />
-                </div>
-                
-                <div className="mt-4 text-center text-sm text-muted-foreground">
-                  Privacy settings will be available in a future update.
+                  <Switch 
+                    checked={thirdPartySharing} 
+                    onCheckedChange={toggleThirdPartySharing} 
+                  />
                 </div>
               </div>
             </TabsContent>
