@@ -10,12 +10,17 @@ if (!API_KEY) {
 // Search recipes
 export async function searchRecipes(query: string, diet?: string, mealType?: string, maxReadyTime?: number, intolerances?: string): Promise<any> {
   try {
+    // Default query if none provided
+    const searchQuery = query || 'main dish';
+    
     const params = new URLSearchParams({
       apiKey: API_KEY as string,
-      query,
-      number: '6',
+      query: searchQuery,
+      number: '8',  // Increased from 6 to get more recipes
       addRecipeInformation: 'true',
       fillIngredients: 'true',
+      sort: 'popularity',  // Sort by popularity for better results
+      instructionsRequired: 'true',  // Ensure recipes have instructions
     });
 
     if (diet) params.append('diet', diet);
@@ -23,13 +28,20 @@ export async function searchRecipes(query: string, diet?: string, mealType?: str
     if (maxReadyTime) params.append('maxReadyTime', maxReadyTime.toString());
     if (intolerances) params.append('intolerances', intolerances);
     
+    console.log(`Requesting Spoonacular API: ${searchQuery} ${mealType || ''} ${diet || ''}`);
     const response = await fetch(`${BASE_URL}/recipes/complexSearch?${params.toString()}`);
     
     if (!response.ok) {
+      console.error(`Spoonacular API responded with ${response.status}: ${response.statusText}`);
+      if (response.status === 402) {
+        throw new Error(`Spoonacular API daily quota exceeded. Try again tomorrow or upgrade the API plan.`);
+      }
       throw new Error(`Spoonacular API error: ${response.status} ${response.statusText}`);
     }
     
-    return await response.json();
+    const data = await response.json() as { results: any[], offset: number, number: number, totalResults: number };
+    console.log(`Spoonacular API returned ${data.results?.length || 0} recipes`);
+    return data;
   } catch (error) {
     console.error('Error searching recipes:', error);
     throw error;
@@ -44,6 +56,7 @@ export async function getRandomRecipes(tags?: string[], number: number = 3, into
       number: number.toString(),
       addRecipeInformation: 'true',
       fillIngredients: 'true',
+      instructionsRequired: 'true',  // Ensure recipes have instructions
     });
     
     if (tags && tags.length > 0) {
@@ -54,13 +67,20 @@ export async function getRandomRecipes(tags?: string[], number: number = 3, into
       params.append('intolerances', intolerances);
     }
     
+    console.log(`Requesting random recipes with tags: ${tags?.join(', ') || 'none'}`);
     const response = await fetch(`${BASE_URL}/recipes/random?${params.toString()}`);
     
     if (!response.ok) {
+      console.error(`Spoonacular API responded with ${response.status}: ${response.statusText}`);
+      if (response.status === 402) {
+        throw new Error(`Spoonacular API daily quota exceeded. Try again tomorrow or upgrade the API plan.`);
+      }
       throw new Error(`Spoonacular API error: ${response.status} ${response.statusText}`);
     }
     
-    return await response.json();
+    const data = await response.json() as { recipes: any[] };
+    console.log(`Spoonacular API returned ${data.recipes?.length || 0} random recipes`);
+    return data;
   } catch (error) {
     console.error('Error getting random recipes:', error);
     throw error;

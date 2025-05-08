@@ -145,9 +145,26 @@ export async function getRecipes(params: {
   if (params.servings) {
     searchParams.append('servings', params.servings.toString());
   }
-  
-  const response = await apiRequest('GET', `/api/recipes?${searchParams.toString()}`);
-  return await response.json();
+
+  try {
+    const response = await apiRequest('GET', `/api/recipes?${searchParams.toString()}`);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch recipes');
+    }
+    
+    return await response.json();
+  } catch (error: any) {
+    console.error('Error fetching recipes:', error);
+    
+    // Check if error is related to the Spoonacular API specifically
+    if (error.message && error.message.includes('Spoonacular API')) {
+      throw new Error('Online recipe search is temporarily unavailable. Please try again later or use local recipes.');
+    }
+    
+    throw error;
+  }
 }
 
 /**
