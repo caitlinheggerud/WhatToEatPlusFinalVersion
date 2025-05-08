@@ -70,22 +70,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Prepare the prompt for Gemini API
         const prompt = `
-          Analyze this receipt and extract the items, GST (tax), and total in a simple JSON format.
+          Analyze this receipt and extract the items, tax, and total in a simple JSON format.
+          
+          If receipt contains Chinese text:
+          - Translate item names from Chinese to English if possible, but leave the original Chinese name in the description field
+          - Make sure to understand Chinese food items, household products, etc., and categorize them correctly
+          - Examples: 
+            - "米饭" or "白饭" should be categorized as "Food"
+            - "饮料" or "可乐" should be categorized as "Beverage"
+            - "洗发水" or "肥皂" should be categorized as "Personal Care"
+
+          Categorize each item into one of these categories ONLY:
+          - Food (for food items, groceries, fruits, vegetables, rice, noodles, meat, fish, etc.)
+          - Beverage (for drinks, water, soda, alcohol, tea, coffee, etc.)
+          - Household (for cleaning supplies, kitchenware, towels, etc.)
+          - Electronics (for electronic devices, gadgets, etc.)
+          - Clothing (for clothes, shoes, accessories, etc.)
+          - Personal Care (for toiletries, cosmetics, soap, shampoo, etc.)
+          - Tax (for GST, VAT, sales tax, service charge, etc.)
+          - Total (for the total amount only)
+          - Other (if item doesn't fit in any category above)
           
           Format each regular item as:
-          {"name": "Item Name", "description": "Details if any", "price": "$XX.XX", "category": "Food/Beverage/etc"}
+          {"name": "Item Name", "description": "Details if any", "price": "$XX.XX", "category": "Food/Beverage/Household/Electronics/Clothing/Personal Care/Other"}
           
-          Be sure to include GST/tax (very important):
-          {"name": "GST", "description": "Goods and Services Tax", "price": "$X.XX", "category": "Tax"}
+          Be sure to include tax (very important):
+          {"name": "Tax", "description": "Tax or Service Charge", "price": "$X.XX", "category": "Tax"}
           
           And the total:
           {"name": "TOTAL", "description": "Total Payment", "price": "$XX.XX", "category": "Total"}
           
-          Return ONLY a properly formatted JSON array with no explanations:
+          Return ONLY a properly formatted JSON array with no explanations or markdown:
           [
-            {"name": "First Item", "description": "Description", "price": "$10.00", "category": "Food"},
-            {"name": "GST", "description": "Goods and Services Tax", "price": "$1.00", "category": "Tax"},
-            {"name": "TOTAL", "description": "Total Payment", "price": "$11.00", "category": "Total"}
+            {"name": "Bread", "description": "Whole Wheat", "price": "$3.99", "category": "Food"},
+            {"name": "Soda", "description": "Diet Cola", "price": "$1.50", "category": "Beverage"},
+            {"name": "Detergent", "description": "Laundry", "price": "$8.99", "category": "Household"},
+            {"name": "Tax", "description": "Sales Tax", "price": "$1.45", "category": "Tax"},
+            {"name": "TOTAL", "description": "Total Payment", "price": "$15.93", "category": "Total"}
           ]
         `;
 

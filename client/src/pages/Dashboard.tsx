@@ -44,8 +44,20 @@ export default function Dashboard() {
     fetchData();
   }, [toast]);
 
-  // Get unique categories from receipt items
-  const categories = Array.from(new Set(receiptItems.map(item => item.category)));
+  // Get unique categories from receipt items and add standard ones
+  const categories = Array.from(
+    new Set([
+      ...receiptItems.map(item => item.category),
+      // Add standard categories that might not be in the data yet
+      "Food", 
+      "Beverage", 
+      "Household", 
+      "Electronics", 
+      "Clothing", 
+      "Personal Care", 
+      "Other"
+    ].filter(Boolean))
+  ).filter(cat => cat !== "Total" && cat !== "Tax").sort();
   
   // Filter receipt items by category if a category is selected
   const filteredReceiptItems = activeCategory 
@@ -119,13 +131,19 @@ export default function Dashboard() {
             </CardContent>
           </Card>
           
-          {["Food", "Household", "Other"].map(category => (
+          {["Food", "Beverage", "Household", "Personal Care"].map(category => (
             <Card key={category}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{category}</CardTitle>
                 <div className={`h-4 w-4 rounded-full ${
                   category === "Food" ? "bg-green-500" : 
-                  category === "Household" ? "bg-blue-500" : "bg-purple-500"
+                  category === "Beverage" ? "bg-cyan-500" :
+                  category === "Household" ? "bg-blue-500" : 
+                  category === "Electronics" ? "bg-violet-500" :
+                  category === "Clothing" ? "bg-pink-500" :
+                  category === "Personal Care" ? "bg-orange-500" :
+                  category === "Other" ? "bg-gray-500" :
+                  "bg-purple-500"
                 }`}></div>
               </CardHeader>
               <CardContent>
@@ -231,9 +249,14 @@ export default function Dashboard() {
                                 key={`cell-${index}`} 
                                 fill={
                                   category === "Food" ? "#10b981" : 
+                                  category === "Beverage" ? "#06b6d4" : 
                                   category === "Household" ? "#3b82f6" : 
+                                  category === "Electronics" ? "#8b5cf6" : 
+                                  category === "Clothing" ? "#ec4899" : 
+                                  category === "Personal Care" ? "#f97316" : 
                                   category === "Tax" ? "#f43f5e" :
-                                  category === "Total" ? "#8b5cf6" :
+                                  category === "Total" ? "#6b7280" :
+                                  category === "Other" ? "#a3a3a3" :
                                   `#${Math.floor(Math.random() * 16777215).toString(16)}`
                                 } 
                               />
@@ -279,8 +302,14 @@ export default function Dashboard() {
                                 key={`cell-${index}`} 
                                 fill={
                                   category === "Food" ? "#10b981" : 
+                                  category === "Beverage" ? "#06b6d4" : 
                                   category === "Household" ? "#3b82f6" : 
+                                  category === "Electronics" ? "#8b5cf6" : 
+                                  category === "Clothing" ? "#ec4899" : 
+                                  category === "Personal Care" ? "#f97316" : 
                                   category === "Tax" ? "#f43f5e" :
+                                  category === "Total" ? "#6b7280" :
+                                  category === "Other" ? "#a3a3a3" :
                                   `#${Math.floor(Math.random() * 16777215).toString(16)}`
                                 } 
                               />
