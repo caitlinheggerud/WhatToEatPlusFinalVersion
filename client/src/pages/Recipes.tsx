@@ -49,6 +49,7 @@ function Recipes() {
   
   const [randomRecipe, setRandomRecipe] = useState<Recipe | null>(null);
   const [isLoadingRandom, setIsLoadingRandom] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [favorites, setFavorites] = useState<number[]>([]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -87,8 +88,39 @@ function Recipes() {
     enabled: true, // Auto-load recipes on component mount
   });
 
-  const handleSearch = () => {
-    refetchRecipes();
+  const handleSearch = async () => {
+    try {
+      setIsSearching(true);
+      
+      // Show toast notification that search is in progress
+      toast({
+        title: "Searching recipes...",
+        description: "Looking for recipes that match your criteria",
+        duration: 2000,
+      });
+      
+      // Refresh the recipes data
+      await refetchRecipes();
+      
+      // Show success toast if search was successful
+      toast({
+        title: "Search complete",
+        description: `Found ${recipes.length} recipes matching your criteria`,
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error("Error searching for recipes:", error);
+      
+      // Show error toast
+      toast({
+        title: "Search failed",
+        description: "There was an error finding recipes. Please try again.",
+        variant: "destructive",
+        duration: 4000,
+      });
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleRandomRecipe = async () => {
