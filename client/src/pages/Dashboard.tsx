@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { getReceipts, getReceiptItems, saveReceiptItems } from "@/lib/api";
-import CenteredUploadButton from "@/components/CenteredUploadButton";
-import { UploadReceiptModal } from "@/components/UploadReceiptModal";
+import { getReceipts, getReceiptItems } from "@/lib/api";
+import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DownloadIcon, PieChartIcon, BarChartIcon, CalendarIcon, FilterIcon, UploadIcon } from "lucide-react";
+import { DownloadIcon, PieChartIcon, BarChartIcon, CalendarIcon, FilterIcon, UploadIcon, ReceiptIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { type ReceiptItemResponse } from "@shared/schema";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -90,40 +89,16 @@ export default function Dashboard() {
     }
   };
 
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  
-  const handleOpenUploadModal = () => {
-    setIsUploadModalOpen(true);
-  };
-  
-  const handleCloseUploadModal = () => {
-    setIsUploadModalOpen(false);
-  };
-  
-  const handleSuccessfulUpload = async (items: any[]) => {
-    try {
-      // Save the receipt items
-      await saveReceiptItems(items);
-      
-      toast({
-        title: "Success",
-        description: "Receipt saved successfully",
-        variant: "default",
-      });
-      
-      // Refresh receipt items
-      const allItems = await getReceiptItems();
-      setReceipts(allItems);
-    } catch (err) {
-      console.error("Error saving receipt items:", err);
-      toast({
-        title: "Error",
-        description: "Failed to save receipt",
-        variant: "destructive",
-      });
-    }
-  };
+  // Simply navigate to home page for upload functionality
 
+  // Import location hook
+  const [, navigate] = useLocation();
+  
+  // Function to navigate to the upload page
+  const navigateToUpload = () => {
+    navigate('/');
+  };
+  
   return (
       <div className="py-6 space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
@@ -134,14 +109,6 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button 
-              className="bg-gradient" 
-              size="sm"
-              onClick={handleOpenUploadModal}
-            >
-              <UploadIcon className="mr-2 h-4 w-4" />
-              Upload Receipt
-            </Button>
             <Button variant="outline" size="sm" className="bg-white hover:bg-white/80 transition-colors">
               <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
               Date Range
@@ -157,19 +124,37 @@ export default function Dashboard() {
           </div>
         </div>
         
-        {/* Centered Upload Button - Show only when there's no data */}
+        {/* Centered Upload Button - Always show this for the dashboard */}
         {receipts.length === 0 && !loading && (
           <div className="bg-white/70 shadow-sm border border-border/60 rounded-lg overflow-hidden my-6">
-            <CenteredUploadButton />
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+              <div className="text-center max-w-md mx-auto mb-8">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-5">
+                  <ReceiptIcon className="h-10 w-10 text-primary" />
+                </div>
+                <h2 className="text-2xl font-bold mb-3 text-gradient">Upload Your Receipt</h2>
+                <p className="text-muted-foreground">
+                  Upload a receipt image to track your grocery expenses and get personalized recipe suggestions based on your purchases.
+                </p>
+              </div>
+              
+              <Button 
+                size="lg" 
+                className="bg-gradient hover:shadow-lg transition-all h-14 px-8 text-base"
+                onClick={navigateToUpload}
+              >
+                <UploadIcon className="mr-2 h-5 w-5" />
+                Upload Receipt
+              </Button>
+              
+              <div className="mt-4 text-sm text-muted-foreground">
+                Supports JPG, PNG, PDF, and HEIC files
+              </div>
+            </div>
           </div>
         )}
         
-        {/* Upload Modal */}
-        <UploadReceiptModal
-          isOpen={isUploadModalOpen}
-          onClose={handleCloseUploadModal}
-          onSuccess={handleSuccessfulUpload}
-        />
+        {/* Navigation to upload page instead of modal */}
 
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
           <Card className="hover-card overflow-hidden border-border/60 shadow-sm">
