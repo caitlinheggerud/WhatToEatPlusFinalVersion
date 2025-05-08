@@ -18,7 +18,7 @@ function Profile() {
   };
   
   return (
-    <div className="py-6 space-y-8">
+    <div className="py-6 space-y-8 container mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gradient">Profile</h1>
