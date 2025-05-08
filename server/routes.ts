@@ -566,7 +566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/recipes", async (req: Request, res: Response) => {
     try {
       // Check if we should use Spoonacular API or local database
-      const useApi = req.query.useApi === 'true' || true; // Default to using API
+      const useApi = req.query.useApi !== 'false'; // Default to using API unless explicitly set to false
       
       if (useApi) {
         // Import the Spoonacular API module
