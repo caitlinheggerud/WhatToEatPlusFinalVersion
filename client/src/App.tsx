@@ -15,8 +15,8 @@ import { Toaster } from "@/components/ui/toaster";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home}/>
-      <Route path="/dashboard" component={Dashboard}/>
+      <Route path="/" component={Dashboard}/>
+      <Route path="/upload" component={Home}/>
       <Route path="/inventory" component={Inventory}/>
       <Route path="/recipes" component={Recipes}/>
       <Route path="/receipts" component={Receipts}/>

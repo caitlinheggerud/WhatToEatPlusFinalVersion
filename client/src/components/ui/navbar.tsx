@@ -60,7 +60,7 @@ export function Navbar() {
         <nav className="hidden md:flex items-center space-x-1">
           {navItems.map(({ name, href, icon: Icon }) => {
             const isActive = (
-              href === "/dashboard" && (location === "/dashboard" || location === "/") ||
+              href === "/dashboard" && location === "/" ||
               location === href
             );
             
@@ -168,7 +168,7 @@ export function Navbar() {
               <nav className="flex flex-col space-y-1 mb-8">
                 {navItems.map(({ name, href, icon: Icon }) => {
                   const isActive = (
-                    href === "/dashboard" && (location === "/dashboard" || location === "/") ||
+                    href === "/dashboard" && location === "/" ||
                     location === href
                   );
                   

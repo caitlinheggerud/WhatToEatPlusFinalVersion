@@ -96,7 +96,7 @@ export default function Dashboard() {
   
   // Function to navigate to the upload page
   const navigateToUpload = () => {
-    navigate('/');
+    navigate('/upload');
   };
   
   return (
