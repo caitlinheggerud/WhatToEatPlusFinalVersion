@@ -108,14 +108,14 @@ export async function getDietaryPreferences(): Promise<any> {
  * Get recipes with optional filtering
  */
 export async function getRecipes(params: {
-  mealTypeId?: number;
+  mealTypeId?: number | string;
   dietaryRestrictions?: number[];
   searchTerm?: string;
   inventoryBased?: boolean;
 }): Promise<any> {
   const searchParams = new URLSearchParams();
   
-  if (params.mealTypeId) {
+  if (params.mealTypeId && params.mealTypeId !== 'all') {
     searchParams.append('mealTypeId', params.mealTypeId.toString());
   }
   
@@ -139,13 +139,13 @@ export async function getRecipes(params: {
  * Get a random recipe
  */
 export async function getRandomRecipe(params: {
-  mealTypeId?: number;
+  mealTypeId?: number | string;
   dietaryRestrictions?: number[];
   inventoryBased?: boolean;
 }): Promise<any> {
   const searchParams = new URLSearchParams();
   
-  if (params.mealTypeId) {
+  if (params.mealTypeId && params.mealTypeId !== 'all') {
     searchParams.append('mealTypeId', params.mealTypeId.toString());
   }
   

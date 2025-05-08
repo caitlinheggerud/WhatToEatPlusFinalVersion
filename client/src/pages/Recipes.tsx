@@ -36,21 +36,21 @@ interface Recipe {
 
 function Recipes() {
   const [filters, setFilters] = useState({
-    mealTypeId: '',
+    mealTypeId: 'all',
     inventoryBased: true,
     servings: '2'
   });
 
   // Fetch meal types
-  const { data: mealTypes, isLoading: isMealTypesLoading, error: mealTypesError } = useQuery({
+  const { data: mealTypes = [], isLoading: isMealTypesLoading, error: mealTypesError } = useQuery<MealType[]>({
     queryKey: ['/api/meal-types'],
     retry: 1,
   });
 
   // Fetch recipes based on filters
-  const { data: recipes, isLoading: isRecipesLoading, error: recipesError, refetch: refetchRecipes } = useQuery({
+  const { data: recipes = [], isLoading: isRecipesLoading, error: recipesError, refetch: refetchRecipes } = useQuery<Recipe[]>({
     queryKey: ['/api/recipes', filters],
-    enabled: false, // We'll manually trigger this query
+    enabled: true, // Auto-load recipes on component mount
   });
 
   const handleSearch = () => {
@@ -94,7 +94,7 @@ function Recipes() {
                   <SelectValue placeholder="Select meal type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All meal types</SelectItem>
+                  <SelectItem value="all">All meal types</SelectItem>
                   {mealTypes?.map((type: MealType) => (
                     <SelectItem key={type.id} value={type.id.toString()}>
                       {type.name}
