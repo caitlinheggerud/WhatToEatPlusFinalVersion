@@ -85,10 +85,6 @@ export async function addInventoryItem(item: any): Promise<any> {
  */
 export async function deleteInventoryItem(id: number): Promise<any> {
   const response = await apiRequest('DELETE', `/api/inventory/${id}`);
-  // For 204 No Content responses, don't try to parse JSON
-  if (response.status === 204) {
-    return { success: true };
-  }
   return response.json();
 }
 
