@@ -38,13 +38,16 @@ function Favorites() {
     }
   }, []);
   
-  // Fetch all recipes
+  // Fetch all recipes, including those from online sources
   const { data: allRecipes = [], isLoading, error } = useQuery<Recipe[]>({
     queryKey: ['/api/recipes'],
     queryFn: async () => {
-      return await getRecipes({
-        useApi: false // Only fetch local recipes to be faster
+      // Get all recipes including online ones
+      const onlineRecipes = await getRecipes({
+        useApi: true // Include online recipes
       });
+      
+      return onlineRecipes;
     },
   });
   
