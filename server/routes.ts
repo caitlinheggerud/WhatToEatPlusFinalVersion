@@ -741,6 +741,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DeepAI image enhancement endpoint
+  app.post("/api/images/enhance", async (req: Request, res: Response) => {
+    try {
+      const { imageUrl, enhancementType } = req.body;
+      
+      if (!imageUrl) {
+        return res.status(400).json({ message: "No image URL provided" });
+      }
+      
+      let enhancedImageUrl;
+      
+      // Choose enhancement type based on request
+      if (enhancementType === 'resolution') {
+        enhancedImageUrl = await enhanceImageResolution(imageUrl);
+      } else {
+        // Default to color enhancement
+        enhancedImageUrl = await enhanceImage(imageUrl);
+      }
+      
+      return res.status(200).json({ 
+        originalUrl: imageUrl,
+        enhancedUrl: enhancedImageUrl 
+      });
+    } catch (error) {
+      console.error("Error enhancing image:", error);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Unknown error occurred while enhancing image",
+        originalUrl: req.body.imageUrl
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { getReceiptItems } from "@/lib/api";
+import { getReceipts, getReceiptItems } from "@/lib/api";
 import { DashboardLayout } from "@/components/layout/Dashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,8 +20,16 @@ export default function Dashboard() {
     async function fetchReceipts() {
       try {
         setLoading(true);
-        const data = await getReceiptItems();
-        setReceipts(data);
+        // Use getReceipts() instead of getReceiptItems() to fetch all receipts
+        const receiptData = await getReceipts();
+        
+        // If we have receipts, get the items for the most recent receipt
+        if (receiptData && receiptData.length > 0) {
+          const recentItems = await getReceiptItems();
+          setReceipts(recentItems);
+        } else {
+          setReceipts([]);
+        }
       } catch (err) {
         console.error("Error fetching receipts:", err);
         toast({
@@ -29,6 +37,8 @@ export default function Dashboard() {
           description: "Failed to load receipt history",
           variant: "destructive",
         });
+        // Set empty array to prevent rendering errors
+        setReceipts([]);
       } finally {
         setLoading(false);
       }
