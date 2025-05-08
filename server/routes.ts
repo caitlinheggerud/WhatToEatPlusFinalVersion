@@ -3,7 +3,11 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { insertReceiptItemSchema, receiptItemsResponseSchema } from "@shared/schema";
+import { 
+  insertReceiptItemSchema, 
+  receiptItemsResponseSchema,
+  insertReceiptSchema 
+} from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import fs from "fs";
@@ -306,7 +310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
-  // Save receipt items
+  // Save receipt with items
   app.post("/api/receipts/items", async (req: Request, res: Response) => {
     try {
       const itemsData = req.body;
@@ -315,31 +319,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Expected an array of receipt items" });
       }
       
-      const savedItems = [];
+      // Find the total amount from the receipt data
+      const totalItem = itemsData.find(item => 
+        item.category === 'Total' || ['TOTAL', 'AMOUNT', 'PAYMENT'].includes(String(item.name).toUpperCase())
+      );
       
-      for (const itemData of itemsData) {
-        try {
-          // Validate each item
-          const validatedItem = insertReceiptItemSchema.parse({
-            name: itemData.name,
-            description: itemData.description || null,
-            price: itemData.price, // Keep as string for the schema
-            category: itemData.category || "Others"
-          });
-          
-          // Save to storage
-          const savedItem = await storage.createReceiptItem(validatedItem);
-          savedItems.push(savedItem);
-        } catch (error) {
-          if (error instanceof z.ZodError) {
-            const validationError = fromZodError(error);
-            return res.status(400).json({ message: validationError.message });
-          }
-          throw error;
-        }
-      }
+      // Create receipt
+      const receiptData = {
+        store: "Unknown Store", // In a real app, you might extract this from the receipt
+        totalAmount: totalItem?.price || null,
+        date: new Date()
+      };
       
-      return res.status(201).json(savedItems);
+      // Filter out items that aren't actual items (like Total and Tax)
+      const actualItems = itemsData.filter(item => 
+        item.category !== 'Total' && !['TOTAL', 'AMOUNT', 'PAYMENT'].includes(String(item.name).toUpperCase())
+      );
+      
+      // Prepare items for insertion
+      const insertItems = actualItems.map(item => ({
+        name: item.name,
+        description: item.description || null,
+        price: item.price,
+        category: item.category || "Others"
+      }));
+      
+      // Save receipt and items
+      const receiptWithItems = await storage.createReceiptWithItems(receiptData, insertItems);
+      
+      return res.status(201).json(receiptWithItems);
     } catch (error) {
       console.error("Error saving receipt items:", error);
       return res.status(500).json({ 
@@ -348,7 +356,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all receipt items
+  // Get all receipts
+  app.get("/api/receipts", async (req: Request, res: Response) => {
+    try {
+      const receipts = await storage.getReceipts();
+      return res.status(200).json(receipts);
+    } catch (error) {
+      console.error("Error fetching receipts:", error);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Unknown error occurred while fetching receipts" 
+      });
+    }
+  });
+  
+  // Get receipt with items
+  app.get("/api/receipts/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid receipt ID" });
+      }
+      
+      const receipt = await storage.getReceiptWithItems(id);
+      if (!receipt) {
+        return res.status(404).json({ message: "Receipt not found" });
+      }
+      
+      return res.status(200).json(receipt);
+    } catch (error) {
+      console.error("Error fetching receipt:", error);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Unknown error occurred while fetching receipt" 
+      });
+    }
+  });
+
+  // Get all receipt items (legacy endpoint)
   app.get("/api/receipts/items", async (req: Request, res: Response) => {
     try {
       const items = await storage.getReceiptItems();
