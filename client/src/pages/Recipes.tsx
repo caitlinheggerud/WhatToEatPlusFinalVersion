@@ -86,6 +86,7 @@ function Recipes() {
       });
     },
     enabled: true, // Auto-load recipes on component mount
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
   });
 
   const handleSearch = async () => {
@@ -451,9 +452,15 @@ function Recipes() {
             <div className="flex flex-col sm:flex-row gap-3 mt-6">
               <Button 
                 onClick={handleSearch} 
+                disabled={isSearching || isRecipesLoading}
                 className="flex-1 bg-gradient py-6 text-base hover:shadow-lg transition-all"
               >
-                Search Recipes
+                {isSearching ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Searching...
+                  </span>
+                ) : "Search Recipes"}
               </Button>
               <Button 
                 variant="outline" 
