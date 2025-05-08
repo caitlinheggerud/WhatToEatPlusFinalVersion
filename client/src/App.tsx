@@ -9,6 +9,8 @@ import Inventory from "@/pages/Inventory";
 import Recipes from "@/pages/Recipes";
 import Receipts from "@/pages/Receipts";
 import Profile from "@/pages/Profile";
+import Favorites from "@/pages/Favorites";
+import Settings from "@/pages/Settings";
 import { Navbar } from "@/components/ui/navbar";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -21,6 +23,8 @@ function Router() {
       <Route path="/recipes" component={Recipes}/>
       <Route path="/receipts" component={Receipts}/>
       <Route path="/profile" component={Profile}/>
+      <Route path="/favorites" component={Favorites}/>
+      <Route path="/settings" component={Settings}/>
       <Route component={NotFound} />
     </Switch>
   );

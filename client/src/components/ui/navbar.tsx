@@ -124,7 +124,7 @@ export function Navbar() {
                 </Link>
                 <div className="border-t border-border/40 mt-1"></div>
                 <Link href="/">
-                  <div className="px-4 py-2 text-sm text-rose-500 hover:bg-gray-100 flex items-center">
+                  <div className="px-4 py-2 text-sm text-rose-500 hover:bg-gray-100 flex items-center" onClick={() => setProfileOpen(false)}>
                     <LogOutIcon className="h-4 w-4 mr-2" />
                     Logout
                   </div>
@@ -197,25 +197,25 @@ export function Navbar() {
                   <p className="text-xs text-muted-foreground">user@example.com</p>
                 </div>
                 <Link href="/favorites">
-                  <div className="flex items-center px-4 py-3 text-sm text-muted-foreground hover:bg-muted rounded-md">
+                  <div className="flex items-center px-4 py-3 text-sm text-muted-foreground hover:bg-muted rounded-md" onClick={() => setMobileMenuOpen(false)}>
                     <HeartIcon className="h-5 w-5 mr-3" />
                     Favorites
                   </div>
                 </Link>
                 <Link href="/profile">
-                  <div className="flex items-center px-4 py-3 text-sm text-muted-foreground hover:bg-muted rounded-md">
+                  <div className="flex items-center px-4 py-3 text-sm text-muted-foreground hover:bg-muted rounded-md" onClick={() => setMobileMenuOpen(false)}>
                     <UserIcon className="h-5 w-5 mr-3" />
                     Edit Profile
                   </div>
                 </Link>
                 <Link href="/settings">
-                  <div className="flex items-center px-4 py-3 text-sm text-muted-foreground hover:bg-muted rounded-md">
+                  <div className="flex items-center px-4 py-3 text-sm text-muted-foreground hover:bg-muted rounded-md" onClick={() => setMobileMenuOpen(false)}>
                     <SettingsIcon className="h-5 w-5 mr-3" />
                     Settings
                   </div>
                 </Link>
                 <Link href="/">
-                  <div className="flex items-center px-4 py-3 mt-2 text-sm text-rose-500 hover:bg-muted rounded-md">
+                  <div className="flex items-center px-4 py-3 mt-2 text-sm text-rose-500 hover:bg-muted rounded-md" onClick={() => setMobileMenuOpen(false)}>
                     <LogOutIcon className="h-5 w-5 mr-3" />
                     Logout
                   </div>
