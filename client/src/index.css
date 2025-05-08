@@ -138,3 +138,41 @@ body {
 .btn:hover {
   transform: translateY(-2px);
 }
+
+/* High contrast mode */
+.high-contrast {
+  --contrast-background: white;
+  --contrast-foreground: black;
+  --contrast-primary: rgb(0, 102, 204);
+  --contrast-secondary: rgb(0, 51, 102);
+  --contrast-border: black;
+}
+
+.high-contrast * {
+  border-color: var(--contrast-border) !important;
+}
+
+.high-contrast .bg-white,
+.high-contrast .bg-background {
+  background-color: var(--contrast-background) !important;
+}
+
+.high-contrast .text-foreground,
+.high-contrast .text-primary,
+.high-contrast .text-muted-foreground,
+.high-contrast .text-gradient {
+  color: var(--contrast-foreground) !important;
+  -webkit-text-fill-color: var(--contrast-foreground) !important;
+}
+
+.high-contrast .bg-gradient,
+.high-contrast .bg-primary {
+  background: var(--contrast-primary) !important;
+}
+
+.high-contrast a:focus,
+.high-contrast button:focus,
+.high-contrast input:focus {
+  outline: 3px solid var(--contrast-primary) !important;
+  outline-offset: 2px;
+}

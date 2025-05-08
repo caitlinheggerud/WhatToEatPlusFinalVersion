@@ -139,8 +139,7 @@ function Settings() {
     });
   };
 
-  // Don't render until after mounting to prevent hydration mismatch
-  if (!mounted) return null;
+  // Removed mounted check since we're using a simpler implementation
 
   return (
     <div className="py-6 space-y-8">
@@ -192,7 +191,7 @@ function Settings() {
                     </p>
                   </div>
                   <Switch 
-                    checked={theme === 'dark'} 
+                    checked={darkMode} 
                     onCheckedChange={toggleDarkMode} 
                   />
                 </div>
