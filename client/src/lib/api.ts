@@ -199,8 +199,25 @@ export async function getRandomRecipe(params: {
     searchParams.append('inventoryBased', 'true');
   }
   
-  const response = await apiRequest('GET', `/api/recipes/random?${searchParams.toString()}`);
-  return await response.json();
+  try {
+    const response = await apiRequest('GET', `/api/recipes/random?${searchParams.toString()}`);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch random recipe');
+    }
+    
+    return await response.json();
+  } catch (error: any) {
+    console.error('Error fetching random recipe:', error);
+    
+    // Check if error is related to the Spoonacular API specifically
+    if (error.message && error.message.includes('Spoonacular API')) {
+      throw new Error('Online recipe search is temporarily unavailable. Please try again later or use local recipes.');
+    }
+    
+    throw error;
+  }
 }
 
 
