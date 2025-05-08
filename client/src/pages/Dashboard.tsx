@@ -154,7 +154,7 @@ export default function Dashboard() {
           </div>
         )}
         
-        {/* Navigation to upload page instead of modal */}
+
 
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
           <Card className="hover-card overflow-hidden border-border/60 shadow-sm">
