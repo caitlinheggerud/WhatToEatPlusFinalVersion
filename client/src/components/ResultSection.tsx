@@ -47,8 +47,11 @@ export default function ResultSection({
     parseFloat(gstItem.price.replace(/[^\d.-]/g, '')) : 
     0;
   
-  // Get total from totalItem or calculate it
-  const calculatedTotal = subtotal + gstAmount;
+  // Calculate GST if not found (7% of subtotal)
+  const calculatedGst = gstAmount || (subtotal * 0.07);
+  
+  // Get total from totalItem or calculate it (subtotal + GST)
+  const calculatedTotal = subtotal + calculatedGst;
   const displayTotal = totalItem ? 
     parseFloat(totalItem.price.replace(/[^\d.-]/g, '')) : 
     calculatedTotal;
@@ -90,14 +93,13 @@ export default function ResultSection({
               </span>
             </div>
             
-            {gstItem && (
-              <div className="flex justify-between items-center mt-2">
-                <span className="font-medium text-gray-700">{gstItem.name}</span>
-                <span className="font-medium text-gray-700">
-                  {`${currencySymbol}${gstAmount.toFixed(2)}`}
-                </span>
-              </div>
-            )}
+            {/* Always show GST - if none found, calculate as 7% */}
+            <div className="flex justify-between items-center mt-2">
+              <span className="font-medium text-gray-700">{gstItem ? gstItem.name : "GST (7%)"}</span>
+              <span className="font-medium text-gray-700">
+                {`${currencySymbol}${(gstItem ? gstAmount : subtotal * 0.07).toFixed(2)}`}
+              </span>
+            </div>
             
             <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-200">
               <span className="font-semibold">Total</span>
