@@ -753,13 +753,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 .where(eq(inventoryItems.isInInventory, true));
               
               if (inventoryItemsData.length > 0) {
-                const inventoryItemNames = inventoryItemsData.map(item => item.name.toLowerCase());
+                const inventoryItemNames = inventoryItemsData.map((item: { name: string }) => item.name.toLowerCase());
                 console.log("Filtering Spoonacular random recipes by inventory items:", inventoryItemNames);
                 
                 // Filter recipes that contain at least one inventory item in their title
-                recipes = recipes.filter(recipe => {
+                recipes = recipes.filter((recipe: { title: string }) => {
                   const recipeTitle = recipe.title.toLowerCase();
-                  return inventoryItemNames.some(itemName => 
+                  return inventoryItemNames.some((itemName: string) => 
                     recipeTitle.includes(itemName) || 
                     (itemName.endsWith('s') && recipeTitle.includes(itemName.slice(0, -1)))
                   );
