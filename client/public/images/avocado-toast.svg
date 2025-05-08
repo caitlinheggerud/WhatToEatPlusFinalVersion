@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <!-- Background -->
+  <rect width="400" height="300" fill="#f9f5f0" />
+  
+  <!-- Plate -->
+  <ellipse cx="200" cy="190" rx="150" ry="30" fill="#e0e0e0" />
+  <ellipse cx="200" cy="185" rx="120" ry="20" fill="#f5f5f5" />
+  
+  <!-- Toast -->
+  <rect x="120" y="100" width="160" height="30" rx="5" ry="5" fill="#e8c39e" />
+  <rect x="125" y="105" width="150" height="20" rx="3" ry="3" fill="#d4a76a" />
+  
+  <!-- Avocado spread -->
+  <rect x="125" y="95" width="150" height="10" rx="2" ry="2" fill="#7d9b58" />
+  <ellipse cx="150" cy="95" rx="10" ry="5" fill="#8dab68" />
+  <ellipse cx="180" cy="95" rx="10" ry="5" fill="#8dab68" />
+  <ellipse cx="210" cy="95" rx="10" ry="5" fill="#8dab68" />
+  <ellipse cx="240" cy="95" rx="10" ry="5" fill="#8dab68" />
+  
+  <!-- Poached Eggs -->
+  <ellipse cx="160" cy="80" rx="30" ry="15" fill="#fff" />
+  <ellipse cx="240" cy="80" rx="30" ry="15" fill="#fff" />
+  <ellipse cx="160" cy="75" rx="20" ry="10" fill="#ffec97" />
+  <ellipse cx="240" cy="75" rx="20" ry="10" fill="#ffec97" />
+  
+  <!-- Seasonings -->
+  <circle cx="140" cy="70" r="2" fill="#111" />
+  <circle cx="150" cy="65" r="2" fill="#111" />
+  <circle cx="155" cy="80" r="2" fill="#111" />
+  <circle cx="230" cy="70" r="2" fill="#111" />
+  <circle cx="245" cy="65" r="2" fill="#111" />
+  <circle cx="235" cy="80" r="2" fill="#111" />
+  
+  <!-- Red pepper flakes -->
+  <rect x="170" cy="60" width="2" height="4" rx="1" ry="1" fill="#c53030" />
+  <rect x="180" cy="65" width="2" height="4" rx="1" ry="1" fill="#c53030" />
+  <rect x="165" cy="75" width="2" height="4" rx="1" ry="1" fill="#c53030" />
+  <rect x="250" cy="60" width="2" height="4" rx="1" ry="1" fill="#c53030" />
+  <rect x="260" cy="65" width="2" height="4" rx="1" ry="1" fill="#c53030" />
+  <rect x="245" cy="75" width="2" height="4" rx="1" ry="1" fill="#c53030" />
+</svg>
