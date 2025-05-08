@@ -89,13 +89,13 @@ export default function Dashboard() {
         
         <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>支出分类</CardTitle>
+            <CardTitle>Expense Categories</CardTitle>
           </CardHeader>
           <CardContent className="h-[300px] flex items-center justify-center">
             <div className="text-muted-foreground text-center p-8">
               <PieChartIcon className="h-10 w-10 mx-auto mb-3 text-muted" />
-              <p>图表将在您添加更多收据后显示</p>
-              <p className="text-sm mt-1 text-muted">完成至少5张收据的扫描</p>
+              <p>Chart will display after adding more receipts</p>
+              <p className="text-sm mt-1 text-muted">Complete at least 5 receipt scans</p>
             </div>
           </CardContent>
         </Card>
