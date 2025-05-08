@@ -1,5 +1,6 @@
-import { ReceiptIcon } from "lucide-react";
+import { BarChart3, ReceiptIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 
 interface HeroSectionProps {
   onScanClick: () => void;

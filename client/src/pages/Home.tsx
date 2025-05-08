@@ -4,6 +4,7 @@ import ImagePreview from "@/components/ImagePreview";
 import LoadingState from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
 import ResultSection from "@/components/ResultSection";
+import { HeroSection } from "@/components/ui/hero-section";
 import { useToast } from "@/hooks/use-toast";
 import { analyzeReceipt, saveReceiptItems } from "@/lib/api";
 import { type ReceiptItemResponse } from "@shared/schema";
@@ -78,55 +79,74 @@ export default function Home() {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="min-h-screen max-w-md mx-auto px-4 py-8">
-        <header className="mb-6">
-          <h1 className="text-2xl font-semibold text-center">Receipt Scanner</h1>
-          <p className="text-sm text-gray-500 text-center mt-1">Upload receipt photos to automatically identify items</p>
-        </header>
+    <div>
+      {state === "upload" && (
+        <div className="space-y-8 pb-8">
+          <HeroSection onScanClick={() => document.getElementById('fileUpload')?.click()} />
+          
+          <div className="container max-w-4xl">
+            <div className="rounded-lg border bg-card p-8 shadow">
+              <h2 className="text-xl font-semibold mb-4">上传收据</h2>
+              <p className="text-muted-foreground mb-6">
+                上传您的收据照片，让AI自动识别商品信息并生成支出报告。
+              </p>
+              <UploadSection 
+                onFileSelect={handleFileSelect}
+                onAnalyze={handleAnalyze}
+                showAnalyzeButton={false}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Preview State */}
+      {state === "preview" && (
+        <div className="container max-w-md mx-auto px-4 py-8">
+          <h2 className="text-xl font-semibold mb-4 text-center">确认收据图片</h2>
+          <ImagePreview 
+            imageUrl={imagePreview!} 
+            onRemove={handleRemoveImage}
+            className="mb-6"
+          />
+          <div className="flex justify-center">
+            <button 
+              onClick={handleAnalyze}
+              className="btn-gradient py-2 px-4 rounded-md shadow-sm flex items-center justify-center"
+            >
+              分析图片
+            </button>
+          </div>
+        </div>
+      )}
 
-        <main>
-          {/* Upload Section - Always visible in upload and preview states */}
-          {(state === "upload" || state === "preview") && (
-            <UploadSection 
-              onFileSelect={handleFileSelect}
-              onAnalyze={handleAnalyze}
-              showAnalyzeButton={state === "preview"}
-            />
-          )}
+      {/* Loading State */}
+      {state === "loading" && (
+        <div className="container max-w-md mx-auto px-4 py-8">
+          <LoadingState />
+        </div>
+      )}
 
-          {/* Loading State */}
-          {state === "loading" && (
-            <LoadingState />
-          )}
+      {/* Error State */}
+      {state === "error" && (
+        <div className="container max-w-md mx-auto px-4 py-8">
+          <ErrorState 
+            message={error} 
+            onRetry={handleRetry} 
+          />
+        </div>
+      )}
 
-          {/* Error State */}
-          {state === "error" && (
-            <ErrorState 
-              message={error} 
-              onRetry={handleRetry} 
-            />
-          )}
-
-          {/* Image Preview - Visible in preview, loading, and results states */}
-          {imagePreview && (state === "preview" || state === "loading" || state === "results") && (
-            <ImagePreview 
-              imageUrl={imagePreview} 
-              onRemove={handleRemoveImage}
-              className="mb-6"
-            />
-          )}
-
-          {/* Results Section */}
-          {state === "results" && (
-            <ResultSection 
-              items={items} 
-              onNewUpload={handleRetry}
-              onSaveResults={handleSaveResults}
-            />
-          )}
-        </main>
-      </div>
+      {/* Results Section */}
+      {state === "results" && (
+        <div className="container max-w-md mx-auto px-4 py-8">
+          <ResultSection 
+            items={items} 
+            onNewUpload={handleRetry}
+            onSaveResults={handleSaveResults}
+          />
+        </div>
+      )}
     </div>
   );
 }
