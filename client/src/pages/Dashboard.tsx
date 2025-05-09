@@ -536,7 +536,7 @@ export default function Dashboard() {
           <Card className="hover-card overflow-hidden border-border/60 shadow-sm">
             <div className="absolute top-0 h-1 w-full bg-gradient opacity-70"></div>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Spent</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Receipt Spending</CardTitle>
               <div className="rounded-full bg-primary/10 p-1.5">
                 <PieChartIcon className="h-4 w-4 text-primary" />
               </div>
@@ -546,6 +546,23 @@ export default function Dashboard() {
               <p className="text-sm text-muted-foreground flex items-center mt-1">
                 <span className="inline-block w-2 h-2 rounded-full bg-primary mr-2"></span>
                 From {receipts.length} items
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="hover-card overflow-hidden border-border/60 shadow-sm">
+            <div className="absolute top-0 h-1 w-full bg-gradient opacity-70"></div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Inventory Value</CardTitle>
+              <div className="rounded-full bg-primary/10 p-1.5">
+                <PieChartIcon className="h-4 w-4 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">${inventoryGrandTotal}</div>
+              <p className="text-sm text-muted-foreground flex items-center mt-1">
+                <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                From {inventoryItems.length} inventory items
               </p>
             </CardContent>
           </Card>
@@ -731,9 +748,9 @@ export default function Dashboard() {
                   <div className="bg-white p-5 rounded-lg border border-border/60 shadow-sm transition-all hover:shadow-md">
                     <h3 className="text-base font-medium mb-1 flex items-center text-muted-foreground">
                       <PieChartIcon className="h-4 w-4 text-primary mr-2" />
-                      Expense Distribution
+                      Receipt Expense Distribution
                     </h3>
-                    <p className="text-xs text-muted-foreground mb-4">Breakdown of expenses by category</p>
+                    <p className="text-xs text-muted-foreground mb-4">Breakdown of receipt expenses by category</p>
                     
                     <div className="h-[260px] w-full">
                       {categories.length > 0 ? (
