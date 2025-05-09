@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/hooks/use-toast';
-import { getInventoryItems, addInventoryItem, deleteInventoryItem } from '../lib/api';
+import { getInventoryItems, addInventoryItem, deleteInventoryItem, updateInventoryItem } from '../lib/api';
 import { 
   PlusIcon, 
   Trash2Icon, 
@@ -21,8 +21,18 @@ import {
   AlertCircleIcon,
   Loader2Icon,
   PackageIcon,
-  CalendarIcon
+  CalendarIcon,
+  CalendarDaysIcon
 } from 'lucide-react';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { format, parseISO, isValid, addDays } from 'date-fns';
 
 type InventoryItem = {
@@ -59,6 +69,9 @@ function Inventory() {
   const [filter, setFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [showNewItemForm, setShowNewItemForm] = useState<boolean>(false);
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [expiryDate, setExpiryDate] = useState<string>('');
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [newItem, setNewItem] = useState({
     name: '',
     description: '',
@@ -154,6 +167,44 @@ function Inventory() {
       toast({
         title: "Error",
         description: "Failed to remove item from inventory",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Open dialog to add expiration date
+  const openExpiryDialog = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setExpiryDate(item.expiryDate || '');
+    setIsDialogOpen(true);
+  };
+  
+  // Update expiration date
+  const handleUpdateExpiryDate = async () => {
+    if (!selectedItem) return;
+    
+    try {
+      await updateInventoryItem(selectedItem.id, {
+        expiryDate: expiryDate || null
+      });
+      
+      toast({
+        title: "Success",
+        description: "Expiration date updated successfully",
+        variant: "default",
+      });
+      
+      // Refresh inventory
+      fetchInventoryItems();
+      
+      // Close dialog
+      setIsDialogOpen(false);
+      setSelectedItem(null);
+    } catch (err) {
+      console.error("Error updating expiration date:", err);
+      toast({
+        title: "Error",
+        description: "Failed to update expiration date",
         variant: "destructive",
       });
     }

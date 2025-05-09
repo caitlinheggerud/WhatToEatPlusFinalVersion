@@ -93,6 +93,14 @@ export async function deleteInventoryItem(id: number): Promise<any> {
 }
 
 /**
+ * Update an inventory item
+ */
+export async function updateInventoryItem(id: number, item: any): Promise<any> {
+  const response = await apiRequest('PATCH', `/api/inventory/${id}`, item);
+  return await response.json();
+}
+
+/**
  * Get meal types
  */
 export async function getMealTypes(): Promise<any> {
