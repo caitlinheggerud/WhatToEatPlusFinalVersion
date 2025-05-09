@@ -218,8 +218,7 @@ export class DatabaseStorage implements IStorage {
       // Determine a more specific category for the item
       const specificCategory = this.determineFoodCategory(item.name);
       
-      // Calculate expiry date based on the specific category
-      const expiryDate = this.getDefaultExpiryDate(specificCategory);
+      // Don't set an expiry date by default - let the user add it manually
       
       return this.createInventoryItem({
         name: item.name,
@@ -227,7 +226,7 @@ export class DatabaseStorage implements IStorage {
         quantity: "1", // Default quantity
         category: specificCategory,
         price: item.price, // Include price from receipt item
-        expiryDate,
+        expiryDate: null, // No default expiry date
         isInInventory: true,
         sourceReceiptId: receiptId
       });
