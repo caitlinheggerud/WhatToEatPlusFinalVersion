@@ -41,6 +41,7 @@ type InventoryItem = {
   description: string | null;
   quantity: string;
   category: string;
+  price: string | null;
   expiryDate: string | null;
   isInInventory: boolean;
   createdAt: string;
@@ -77,6 +78,7 @@ function Inventory() {
     description: '',
     quantity: '1',
     category: 'Other',
+    price: '',
     expiryDate: null as string | null
   });
 
@@ -126,6 +128,7 @@ function Inventory() {
         description: '',
         quantity: '1',
         category: 'Other',
+        price: '',
         expiryDate: null
       });
       
@@ -353,6 +356,15 @@ function Inventory() {
                 </Select>
               </div>
               <div>
+                <Label htmlFor="price">Price (Optional)</Label>
+                <Input
+                  id="price"
+                  placeholder="0.00"
+                  value={newItem.price}
+                  onChange={(e) => setNewItem({...newItem, price: e.target.value})}
+                />
+              </div>
+              <div>
                 <Label htmlFor="expiryDate">Expiry Date (Optional)</Label>
                 <Input
                   id="expiryDate"
@@ -449,6 +461,7 @@ function Inventory() {
                             <th className="px-6 py-3">Item</th>
                             <th className="px-6 py-3">Category</th>
                             <th className="px-6 py-3">Quantity</th>
+                            <th className="px-6 py-3">Price</th>
                             <th className="px-6 py-3">Expiry</th>
                             <th className="px-6 py-3 text-right">Actions</th>
                           </tr>
@@ -470,6 +483,13 @@ function Inventory() {
                                 </span>
                               </td>
                               <td className="px-6 py-4">{item.quantity}</td>
+                              <td className="px-6 py-4">
+                                {item.price ? (
+                                  <span className="text-green-600 font-medium">${item.price}</span>
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">Not set</span>
+                                )}
+                              </td>
                               <td className="px-6 py-4">
                                 {item.expiryDate ? (
                                   <div className="flex items-center">
