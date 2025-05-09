@@ -9,7 +9,7 @@ import { DownloadIcon, PieChartIcon, BarChartIcon, CalendarIcon, FilterIcon, Upl
 import { Badge } from "@/components/ui/badge";
 import { type ReceiptItemResponse } from "@shared/schema";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { format, parseISO, isAfter, isBefore, isValid } from "date-fns";
+import { format, parseISO, isAfter, isBefore, isValid, startOfDay } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
@@ -73,8 +73,12 @@ export default function Dashboard() {
           }
           
           // Apply start date filter if it exists
-          if (startDate && isBefore(receiptDate, startOfDay(startDate))) {
-            return false;
+          if (startDate) {
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0); // Set to start of day
+            if (isBefore(receiptDate, start)) {
+              return false;
+            }
           }
           
           // Apply end date filter if it exists
@@ -156,43 +160,48 @@ export default function Dashboard() {
     async function fetchReceipts() {
       try {
         setLoading(true);
-        // First fetch all receipt headers
+        
+        // Get all receipt headers
         const receipts = await getReceipts();
         setReceiptData(receipts || []);
         
-        // If we have receipts, get all the receipt items for each receipt
-        if (receipts && receipts.length > 0) {
-          try {
-            // Create an array to hold all items
-            let allItemsData: ExtendedReceiptItem[] = [];
-            
-            // Fetch items for each receipt and add them to our collection
-            for (const receipt of receipts) {
-              try {
-                const receiptItems = await getReceiptItems(receipt.id);
-                if (Array.isArray(receiptItems) && receiptItems.length > 0) {
-                  // Add the receipt ID to each item
-                  const itemsWithReceiptId = receiptItems.map(item => ({
-                    ...item,
-                    receiptId: receipt.id
-                  }));
-                  allItemsData = [...allItemsData, ...itemsWithReceiptId];
+        // Get all receipt items directly (simpler approach)
+        try {
+          // Get all receipt items at once
+          const allItems = await getReceiptItems();
+          
+          if (Array.isArray(allItems) && allItems.length > 0) {
+            // Process the items to ensure they have receipt IDs
+            const processedItems = await Promise.all(
+              allItems.map(async (item) => {
+                // If item doesn't have a receiptId, try to find it in receipts
+                if (!item.receiptId && item.id) {
+                  // Find the receipt that might contain this item
+                  const matchingReceipt = receipts.find((receipt: any) => 
+                    receipt.items && Array.isArray(receipt.items) && 
+                    receipt.items.some((receiptItem: any) => receiptItem.id === item.id)
+                  );
+                  
+                  if (matchingReceipt) {
+                    return {
+                      ...item,
+                      receiptId: matchingReceipt.id
+                    };
+                  }
                 }
-              } catch (error) {
-                console.warn(`Error fetching items for receipt ${receipt.id}:`, error);
-                // Continue with next receipt
-              }
-            }
+                return item;
+              })
+            );
             
-            setAllReceipts(allItemsData);
-            setReceipts(allItemsData);
-          } catch (itemsError) {
-            console.error("Error fetching receipt items:", itemsError);
-            // Fallback to empty items if there's an error
+            setAllReceipts(processedItems);
+            setReceipts(processedItems);
+          } else {
+            console.log("No receipt items found");
             setAllReceipts([]);
             setReceipts([]);
           }
-        } else {
+        } catch (itemsError) {
+          console.error("Error fetching receipt items:", itemsError);
           setAllReceipts([]);
           setReceipts([]);
         }
@@ -203,7 +212,6 @@ export default function Dashboard() {
           description: "Failed to load receipt history",
           variant: "destructive",
         });
-        // Set empty array to prevent rendering errors
         setReceiptData([]);
         setAllReceipts([]);
         setReceipts([]);
