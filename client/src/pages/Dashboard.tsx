@@ -9,6 +9,8 @@ import { DownloadIcon, PieChartIcon, BarChartIcon, CalendarIcon, FilterIcon, Upl
 import { Badge } from "@/components/ui/badge";
 import { type ReceiptItemResponse } from "@shared/schema";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import InventoryValueChart from '@/components/InventoryValueChart';
+import InventoryBarChart from '@/components/InventoryBarChart';
 import { format, parseISO, isAfter, isBefore, isValid, startOfDay } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -885,6 +887,20 @@ export default function Dashboard() {
                       <p className="text-xs text-muted-foreground">Based on <span className="font-medium">{receipts.length}</span> items</p>
                     </div>
                   </div>
+                </div>
+                
+                <h3 className="text-lg font-semibold mt-8 mb-4 text-primary">Inventory Value Analysis</h3>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <InventoryValueChart 
+                    inventoryItems={inventoryItems}
+                    inventoryCategoryTotals={inventoryCategoryTotals}
+                    inventoryGrandTotal={inventoryGrandTotal}
+                  />
+                  
+                  <InventoryBarChart
+                    inventoryItems={inventoryItems}
+                    inventoryCategoryTotals={inventoryCategoryTotals}
+                  />
                 </div>
               </CardContent>
             </Card>
