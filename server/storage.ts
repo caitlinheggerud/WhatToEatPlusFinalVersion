@@ -226,6 +226,7 @@ export class DatabaseStorage implements IStorage {
         description: item.description || null,
         quantity: "1", // Default quantity
         category: specificCategory,
+        price: item.price, // Include price from receipt item
         expiryDate,
         isInInventory: true,
         sourceReceiptId: receiptId

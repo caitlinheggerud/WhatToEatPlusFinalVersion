@@ -103,6 +103,7 @@ export const inventoryItems = pgTable("inventory_items", {
   description: text("description"),
   quantity: text("quantity").default("1").notNull(),
   category: text("category").default("Other").notNull(),
+  price: text("price"),  // Add price field to track item costs
   expiryDate: timestamp("expiry_date"),
   isInInventory: boolean("is_in_inventory").default(true).notNull(),
   sourceReceiptId: integer("source_receipt_id").references(() => receipts.id),
