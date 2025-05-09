@@ -23,6 +23,14 @@ export function Navbar() {
   
   // Load favorites count from localStorage
   useEffect(() => {
+    // Initialize favorites if missing
+    if (!localStorage.getItem('favorites')) {
+      localStorage.setItem('favorites', JSON.stringify([]));
+    }
+    if (localStorage.getItem('favoriteRecipeData') === null) {
+      localStorage.setItem('favoriteRecipeData', JSON.stringify([]));
+    }
+    
     const checkFavorites = () => {
       const storedFavorites = localStorage.getItem('favorites');
       if (storedFavorites) {
@@ -33,12 +41,17 @@ export function Navbar() {
             setFavoritesCount(favorites.length);
           } else {
             setFavoritesCount(0);
+            // Ensure we store a proper empty array if it was invalid
+            localStorage.setItem('favorites', JSON.stringify([]));
           }
         } catch (e) {
           console.error("Failed to parse favorites in navbar:", e);
+          // Reset to empty array if parsing failed
+          localStorage.setItem('favorites', JSON.stringify([]));
           setFavoritesCount(0);
         }
       } else {
+        localStorage.setItem('favorites', JSON.stringify([]));
         setFavoritesCount(0);
       }
     };

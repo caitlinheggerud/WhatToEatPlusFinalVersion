@@ -14,6 +14,7 @@ import Settings from "@/pages/Settings";
 import Landing from "@/pages/Landing";
 import { Navbar } from "@/components/ui/navbar";
 import { Toaster } from "@/components/ui/toaster";
+import "@/lib/clearFavorites"; // Import the favorites cleaning utility
 
 function Router() {
   return (
