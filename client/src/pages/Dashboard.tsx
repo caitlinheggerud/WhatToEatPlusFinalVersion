@@ -52,15 +52,28 @@ export default function Dashboard() {
     const filteredReceiptIds = receiptData
       .filter(receipt => {
         try {
-          // Parse the receipt date
-          const receiptDate = typeof receipt.date === 'string' 
-            ? parseISO(receipt.date) 
-            : new Date(receipt.date);
-            
-          if (!isValid(receiptDate)) return false;
+          // Parse the receipt date - ensure it's a valid date
+          let receiptDate;
+          
+          if (typeof receipt.date === 'string') {
+            // Handle various date string formats
+            receiptDate = parseISO(receipt.date);
+            if (!isValid(receiptDate)) {
+              // Try alternative format if needed
+              receiptDate = new Date(receipt.date);
+            }
+          } else {
+            receiptDate = new Date(receipt.date);
+          }
+          
+          // Skip invalid dates
+          if (!isValid(receiptDate)) {
+            console.warn(`Invalid date for receipt ${receipt.id}:`, receipt.date);
+            return false;
+          }
           
           // Apply start date filter if it exists
-          if (startDate && isBefore(receiptDate, startDate)) {
+          if (startDate && isBefore(receiptDate, startOfDay(startDate))) {
             return false;
           }
           
@@ -77,14 +90,30 @@ export default function Dashboard() {
           
           return true;
         } catch (error) {
+          console.error(`Date filtering error for receipt ${receipt.id}:`, error);
           return false;
         }
       })
       .map(receipt => receipt.id);
     
+    // Debug info if filtering isn't working as expected
+    if (filteredReceiptIds.length === 0) {
+      console.log("No receipts matched the date filter", {
+        startDate: startDate?.toISOString(),
+        endDate: endDate?.toISOString(),
+        receipts: receiptData.map(r => ({
+          id: r.id,
+          date: r.date,
+          type: typeof r.date
+        }))
+      });
+    } else {
+      console.log(`Found ${filteredReceiptIds.length} receipts matching date range:`, filteredReceiptIds);
+    }
+    
     // Then filter receipt items based on the filtered receipt IDs
     const filtered = allReceipts.filter(item => {
-      return item.receiptId && filteredReceiptIds.includes(item.receiptId);
+      return item.receiptId !== undefined && filteredReceiptIds.includes(item.receiptId);
     });
     
     setReceipts(filtered);
@@ -131,24 +160,32 @@ export default function Dashboard() {
         const receipts = await getReceipts();
         setReceiptData(receipts || []);
         
-        // If we have receipts, get all the receipt items
+        // If we have receipts, get all the receipt items for each receipt
         if (receipts && receipts.length > 0) {
           try {
-            // Get all receipt items using the updated endpoint
-            const allItems = await getReceiptItems();
+            // Create an array to hold all items
+            let allItemsData: ExtendedReceiptItem[] = [];
             
-            // Ensure receiptId field is present and is a number
-            const processedItems = Array.isArray(allItems) ? allItems.map(item => {
-              return {
-                ...item,
-                receiptId: typeof item.receiptId === 'string' 
-                  ? parseInt(item.receiptId, 10) 
-                  : item.receiptId
-              };
-            }) : [];
+            // Fetch items for each receipt and add them to our collection
+            for (const receipt of receipts) {
+              try {
+                const receiptItems = await getReceiptItems(receipt.id);
+                if (Array.isArray(receiptItems) && receiptItems.length > 0) {
+                  // Add the receipt ID to each item
+                  const itemsWithReceiptId = receiptItems.map(item => ({
+                    ...item,
+                    receiptId: receipt.id
+                  }));
+                  allItemsData = [...allItemsData, ...itemsWithReceiptId];
+                }
+              } catch (error) {
+                console.warn(`Error fetching items for receipt ${receipt.id}:`, error);
+                // Continue with next receipt
+              }
+            }
             
-            setAllReceipts(processedItems);
-            setReceipts(processedItems);
+            setAllReceipts(allItemsData);
+            setReceipts(allItemsData);
           } catch (itemsError) {
             console.error("Error fetching receipt items:", itemsError);
             // Fallback to empty items if there's an error

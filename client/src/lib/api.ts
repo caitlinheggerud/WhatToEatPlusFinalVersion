@@ -34,10 +34,36 @@ export async function saveReceiptItems(items: ReceiptItemResponse[]): Promise<an
 
 /**
  * Fetches all receipt items from the server
+ * @param receiptId Optional receipt ID to filter items
  */
-export async function getReceiptItems(): Promise<any> {
-  const response = await apiRequest('GET', '/api/receipts/items');
-  return await response.json();
+export async function getReceiptItems(receiptId?: number): Promise<any> {
+  // If we have a specific receipt ID, fetch items for that receipt
+  if (receiptId && receiptId > 0) {
+    try {
+      const response = await apiRequest('GET', `/api/receipts/items?receiptId=${receiptId}`);
+      if (!response.ok) {
+        console.warn(`Failed to fetch items for receipt ${receiptId}`);
+        return [];
+      }
+      return await response.json();
+    } catch (error) {
+      console.error(`Error fetching items for receipt ${receiptId}:`, error);
+      return [];
+    }
+  }
+  
+  // Otherwise fetch all items
+  try {
+    const response = await apiRequest('GET', '/api/receipts/items?receiptId=0');
+    if (!response.ok) {
+      console.warn('Failed to fetch all receipt items');
+      return [];
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching all receipt items:', error);
+    return [];
+  }
 }
 
 /**

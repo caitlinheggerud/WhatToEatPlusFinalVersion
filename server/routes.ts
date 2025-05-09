@@ -403,23 +403,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/receipts/items", async (req: Request, res: Response) => {
     try {
       // Check if a receipt ID is provided as a query parameter
-      const receiptId = req.query.receiptId ? parseInt(req.query.receiptId as string) : null;
+      const receiptIdStr = req.query.receiptId as string;
       
-      let items;
-      if (receiptId) {
-        // If receipt ID is provided, get items for that receipt
-        items = await storage.getReceiptItemsByReceiptId(receiptId);
-      } else {
-        // If no receipt ID is provided, get all receipt items
-        items = await storage.getReceiptItems();
+      // If receiptId is 0 or null or undefined, return all items
+      if (!receiptIdStr || receiptIdStr === '0' || receiptIdStr === 'undefined') {
+        const items = await storage.getReceiptItems();
+        return res.status(200).json(items);
       }
       
-      return res.status(200).json(items);
+      // Otherwise, try to parse the receipt ID and get items for that receipt
+      const receiptId = parseInt(receiptIdStr);
+      if (isNaN(receiptId)) {
+        // Don't return an error, just return an empty array for better frontend experience
+        console.warn(`Invalid receipt ID format: ${receiptIdStr}`);
+        return res.status(200).json([]);
+      }
+      
+      try {
+        // Make sure receiptId is a positive number
+        if (receiptId <= 0) {
+          return res.status(200).json([]);
+        }
+        
+        const items = await storage.getReceiptItemsByReceiptId(receiptId);
+        return res.status(200).json(items || []);
+      } catch (itemError) {
+        // If there's an error getting items for this receipt, return an empty array
+        // This is better for the frontend than an error
+        console.warn(`No items found for receipt ID ${receiptId}`);
+        return res.status(200).json([]);
+      }
     } catch (error) {
       console.error("Error fetching receipt items:", error);
-      return res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Unknown error occurred while fetching receipt items" 
-      });
+      // Instead of returning an error, return an empty array
+      return res.status(200).json([]);
     }
   });
   
