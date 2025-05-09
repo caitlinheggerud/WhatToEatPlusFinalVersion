@@ -1086,24 +1086,545 @@ Future enhancements planned for WhatToEat+:
 - Personalized nutrition recommendations
 - Community features for recipe sharing
 
+## 📊 Client-Side State Management
+
+WhatToEat+ employs a sophisticated state management approach to ensure a responsive, consistent user experience across the application.
+
+### React Context API
+
+The primary state management solution leverages React's Context API for global application state:
+
+```typescript
+// SpendingContext.tsx example
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+
+type SpendingContextType = {
+  categoryTotals: Record<string, number>;
+  totalSpent: number;
+  updateSpendingData: (items: any[]) => void;
+};
+
+const SpendingContext = createContext<SpendingContextType | undefined>(undefined);
+
+export function SpendingProvider({ children }: { children: ReactNode }) {
+  const [categoryTotals, setCategoryTotals] = useState<Record<string, number>>({});
+  const [totalSpent, setTotalSpent] = useState(0);
+
+  function updateSpendingData(items: any[]) {
+    // Calculate spending totals by category
+    const newCategoryTotals = calculateSpendingByCategory(items);
+    setCategoryTotals(newCategoryTotals);
+    
+    // Calculate total spending
+    const newTotalSpent = Object.values(newCategoryTotals).reduce((sum, amount) => sum + amount, 0);
+    setTotalSpent(newTotalSpent);
+  }
+
+  return (
+    <SpendingContext.Provider value={{ categoryTotals, totalSpent, updateSpendingData }}>
+      {children}
+    </SpendingContext.Provider>
+  );
+}
+
+export function useSpending() {
+  const context = useContext(SpendingContext);
+  if (context === undefined) {
+    throw new Error('useSpending must be used within a SpendingProvider');
+  }
+  return context;
+}
+```
+
+### Key State Management Patterns
+
+1. **Context-Based Global State**
+   - `SpendingContext`: Manages global spending data and category breakdowns
+   - `InventoryContext`: Tracks current inventory state
+   - `UserPreferencesContext`: Stores user preferences for recipes and UI
+
+2. **React Query for Server State**
+   - Server data is managed through React Query for automatic caching and revalidation
+   - Optimistic updates for improved UX during mutations
+   - Background refetching for real-time data sync
+
+```typescript
+// Example React Query usage
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getInventoryItems, updateInventoryItem } from '@lib/api';
+
+// Query hook for fetching inventory items
+export function useInventoryItems() {
+  return useQuery({
+    queryKey: ['/api/inventory'],
+    queryFn: getInventoryItems,
+  });
+}
+
+// Mutation hook for updating inventory items
+export function useUpdateInventoryItem() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: updateInventoryItem,
+    onSuccess: () => {
+      // Invalidate and refetch inventory data
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+    },
+  });
+}
+```
+
+3. **Local Component State**
+   - Component-specific state using React's useState and useReducer hooks
+   - Form state management with React Hook Form
+   - UI state for modals, tabs, and accordions
+
+4. **LocalStorage for Persistence**
+   - User preferences stored in localStorage
+   - Recipe favorites persisted across sessions
+   - Recent searches and filters
+
+### State Management Architecture
+
+The application implements a layered state management approach:
+
+1. **UI Layer**: React components with local state for UI interactions
+2. **Form Layer**: React Hook Form for complex form state and validation
+3. **Domain Layer**: Context API for domain-specific global state
+4. **Server Layer**: React Query for server data fetching and synchronization
+5. **Persistence Layer**: LocalStorage for cross-session data retention
+
+### State Synchronization
+
+- Receipt data automatically updates spending context
+- Inventory updates trigger recipe recommendation recalculations
+- User preferences immediately affect the UI and persist across sessions
+
+## 🧪 Testing Strategy
+
+WhatToEat+ implements a comprehensive testing strategy to ensure reliability and quality:
+
+### Unit Testing
+
+- **Framework**: Jest with React Testing Library
+- **Coverage Target**: >80% code coverage
+- **Focus Areas**:
+  - Utility functions 
+  - React hooks
+  - State management logic
+  - Data transformation
+
+**Example Unit Test**:
+```typescript
+import { calculateSpendingByCategory } from '../utils/calculateSpendingByCategory';
+
+describe('calculateSpendingByCategory', () => {
+  it('should correctly aggregate spending by category', () => {
+    const items = [
+      { name: 'Milk', price: '$4.99', category: 'Food' },
+      { name: 'Bread', price: '$3.49', category: 'Food' },
+      { name: 'Dish Soap', price: '$2.99', category: 'Household' }
+    ];
+    
+    const result = calculateSpendingByCategory(items);
+    
+    expect(result).toEqual({
+      Food: 8.48,
+      Household: 2.99
+    });
+  });
+  
+  it('should handle missing or invalid price formats', () => {
+    const items = [
+      { name: 'Milk', price: 'N/A', category: 'Food' },
+      { name: 'Bread', price: '$3.49', category: 'Food' }
+    ];
+    
+    const result = calculateSpendingByCategory(items);
+    
+    expect(result).toEqual({
+      Food: 3.49
+    });
+  });
+});
+```
+
+### Integration Testing
+
+- **Focus**: Component interaction and feature workflows
+- **Key Workflows Tested**:
+  - Receipt scanning and processing
+  - Inventory management
+  - Recipe recommendation
+  - Spending analytics
+
+**Example Integration Test**:
+```typescript
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { ReceiptScannerPage } from '../pages/ReceiptScanner';
+import { SpendingProvider } from '../contexts/SpendingContext';
+import * as api from '../lib/api';
+
+// Mock API calls
+jest.mock('../lib/api');
+
+describe('Receipt Scanner Integration', () => {
+  it('should process receipt and update spending data', async () => {
+    // Mock successful API response
+    api.analyzeReceipt.mockResolvedValue([
+      { name: 'Milk', price: '$4.99', category: 'Food' }
+    ]);
+    
+    // Render with necessary providers
+    render(
+      <SpendingProvider>
+        <ReceiptScannerPage />
+      </SpendingProvider>
+    );
+    
+    // Upload a test image
+    const fileInput = screen.getByLabelText(/upload receipt/i);
+    const file = new File(['dummy content'], 'receipt.jpg', { type: 'image/jpeg' });
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    
+    // Click analyze button
+    const analyzeButton = screen.getByRole('button', { name: /analyze/i });
+    fireEvent.click(analyzeButton);
+    
+    // Verify results are displayed
+    await waitFor(() => {
+      expect(screen.getByText('Milk')).toBeInTheDocument();
+      expect(screen.getByText('$4.99')).toBeInTheDocument();
+    });
+    
+    // Verify spending context is updated
+    const saveButton = screen.getByRole('button', { name: /save/i });
+    fireEvent.click(saveButton);
+    
+    await waitFor(() => {
+      expect(screen.getByText(/total: \$4.99/i)).toBeInTheDocument();
+    });
+  });
+});
+```
+
+### End-to-End Testing
+
+- **Framework**: Cypress
+- **Critical Paths**:
+  - User onboarding flow
+  - Receipt upload and processing
+  - Recipe search and filtering
+  - Adding items to inventory
+
+**Example E2E Test**:
+```javascript
+describe('Receipt Processing E2E', () => {
+  beforeEach(() => {
+    cy.visit('/');
+    cy.intercept('POST', '/api/receipts/analyze', { fixture: 'analyzed_receipt.json' }).as('analyzeReceipt');
+    cy.intercept('POST', '/api/receipts/items', { fixture: 'saved_receipt.json' }).as('saveReceipt');
+  });
+  
+  it('should allow uploading and processing a receipt', () => {
+    // Click upload button
+    cy.findByRole('button', { name: /upload receipt/i }).click();
+    
+    // Upload test image
+    cy.get('input[type="file"]').attachFile('test_receipt.jpg');
+    
+    // Click analyze button
+    cy.findByRole('button', { name: /analyze/i }).click();
+    
+    // Wait for analysis to complete
+    cy.wait('@analyzeReceipt');
+    
+    // Verify items are displayed
+    cy.findByText('Milk').should('be.visible');
+    cy.findByText('$4.99').should('be.visible');
+    
+    // Save receipt
+    cy.findByRole('button', { name: /save items/i }).click();
+    cy.wait('@saveReceipt');
+    
+    // Verify success message
+    cy.findByText(/receipt saved successfully/i).should('be.visible');
+    
+    // Navigate to dashboard
+    cy.findByRole('link', { name: /dashboard/i }).click();
+    
+    // Verify spending is updated
+    cy.findByText(/total spent/i).siblings().should('contain', '$4.99');
+  });
+});
+```
+
+### Performance Testing
+
+- **Metrics Monitored**:
+  - Page load time
+  - Time to interactive
+  - API response time
+  - Animation frame rate
+
+- **Tools**:
+  - Lighthouse for performance audits
+  - React Profiler for component optimization
+  - Chrome DevTools for memory and CPU profiling
+
+### Accessibility Testing
+
+- **Standards**: WCAG 2.1 AA compliance
+- **Tools**: 
+  - axe-core for automated accessibility checks
+  - Manual keyboard navigation testing
+  - Screen reader compatibility
+
+## 🚀 Deployment Guidelines
+
+WhatToEat+ is designed for easy deployment across various hosting environments.
+
+### Deployment Options
+
+1. **Docker Deployment**
+   - Complete containerization with Docker Compose
+   - Separate containers for frontend, backend, and database
+   - Environment-specific configuration via Docker environment variables
+
+```yaml
+# docker-compose.yml example
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://backend:5000/api
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/whattoeat
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - SPOONACULAR_API_KEY=${SPOONACULAR_API_KEY}
+      - DEEPAI_API_KEY=${DEEPAI_API_KEY}
+    depends_on:
+      - db
+
+  db:
+    image: postgres:14
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=whattoeat
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+```
+
+2. **Cloud Platform Deployment**
+   - **Vercel**: For frontend hosting
+   - **Railway/Render/Heroku**: For backend services
+   - **Neon/Supabase**: For PostgreSQL database
+
+3. **Traditional VPS Deployment**
+   - Manual setup on Linux VPS
+   - Nginx as reverse proxy
+   - PM2 for Node.js process management
+
+### Environment Configuration
+
+Create separate environment configurations for different deployment stages:
+
+- **Development**: Local development environment
+- **Staging**: Pre-production testing environment
+- **Production**: Live user-facing environment
+
+Example `.env.production`:
+```
+# Database
+DATABASE_URL=postgresql://production_user:secure_password@production-db.example.com:5432/whattoeat_prod
+
+# API Keys (use environment-specific keys)
+GEMINI_API_KEY=prod_gemini_key
+SPOONACULAR_API_KEY=prod_spoonacular_key
+DEEPAI_API_KEY=prod_deepai_key
+
+# Application settings
+NODE_ENV=production
+PORT=5000
+```
+
+### Deployment Checklist
+
+1. **Pre-Deployment**
+   - Run comprehensive test suite
+   - Build production assets
+   - Verify environment variables
+   - Check API key validity
+
+2. **Database Migration**
+   - Back up existing database
+   - Apply schema migrations
+   - Verify data integrity
+   - Seed production data if needed
+
+3. **Deployment Process**
+   - Deploy backend services
+   - Deploy frontend application
+   - Verify connectivity between services
+   - Run smoke tests on deployed environment
+
+4. **Post-Deployment**
+   - Monitor application health
+   - Check error logging
+   - Verify analytics tracking
+   - Monitor external API usage
+
+### Continuous Integration/Deployment
+
+- **GitHub Actions**: Automated build and test pipeline
+- **Vercel Integration**: Automatic preview deployments
+- **Docker Hub**: Containerized release management
+
+Example GitHub Actions workflow:
+```yaml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        run: npm test
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+```
+
 ## 🤝 Contributing
 
 We welcome contributions to WhatToEat+! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) file for detailed guidelines on how to contribute.
 
-### Development Process
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Make your changes
-4. Run tests to ensure functionality
-5. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-6. Push to the branch (`git push origin feature/AmazingFeature`)
-7. Open a Pull Request
+### Development Environment Setup
+
+1. **Fork the repository**
+   ```bash
+   git clone https://github.com/yourusername/whattoeat-plus.git
+   cd whattoeat-plus
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up local environment**
+   Create a `.env.local` file with the necessary configuration:
+   ```
+   DATABASE_URL=postgresql://postgres:password@localhost:5432/whattoeat_dev
+   GEMINI_API_KEY=your_development_key
+   SPOONACULAR_API_KEY=your_development_key
+   DEEPAI_API_KEY=your_development_key
+   ```
+
+4. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+### Contribution Workflow
+
+1. **Create a new branch**
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+
+2. **Make your changes**
+   - Write clean, well-documented code
+   - Follow the established code style
+   - Add appropriate tests
+
+3. **Run tests**
+   ```bash
+   npm test
+   ```
+
+4. **Commit your changes**
+   ```bash
+   git commit -m 'Add some amazing feature'
+   ```
+
+5. **Push to your fork**
+   ```bash
+   git push origin feature/amazing-feature
+   ```
+
+6. **Open a Pull Request**
+   - Provide a clear description of the changes
+   - Link any related issues
+   - Include screenshots for UI changes
 
 ### Code Standards
-- Follow the established code style
-- Write tests for new features
-- Update documentation for any changes
-- Ensure all tests pass before submitting
+
+- **Linting**: ESLint configuration with Prettier integration
+- **TypeScript**: Strict type checking enabled
+- **Testing**: Jest for unit tests, React Testing Library for components
+- **Documentation**: JSDoc comments for functions and components
+
+### Review Process
+
+1. All PRs require at least one review from a maintainer
+2. CI checks must pass before merging
+3. Changes should include appropriate tests
+4. Documentation should be updated for API changes
 
 ## 📜 License
 
