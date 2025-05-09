@@ -1,61 +1,51 @@
+/**
+ * Represents a receipt item with name, category and price
+ */
 type ReceiptItem = {
-  id: number;
   name: string;
   category: string;
-  price: number;
-  quantity: string | number;
-  receiptId: number;
+  price: number | string;
+  [key: string]: any; // Allow for additional properties
 };
 
-type Receipt = {
-  id: number;
-  store: string;
-  totalAmount: number;
-  date: string;
-  items?: ReceiptItem[];
-};
-
+/**
+ * Object containing spending totals by category
+ */
 type CategorySpending = {
   [category: string]: number;
 };
 
-type SpendingData = {
-  totalSpent: number;
-  categoryTotals: CategorySpending;
-};
-
 /**
- * Calculate spending by category from receipts
- * @param receipts Array of receipt objects with items
- * @returns Object with totalSpent and categoryTotals
+ * Calculate spending by category from receipt items
+ * @param items Array of receipt items with price and category
+ * @returns Object with category totals and calculated overall total
  */
-export function calculateSpendingByCategory(receipts: Receipt[]): SpendingData {
+export function calculateSpendingByCategory(items: ReceiptItem[]): CategorySpending & { total: number } {
   const categoryTotals: CategorySpending = {};
-  let totalSpent = 0;
+  let total = 0;
 
-  // Process each receipt and its items
-  receipts.forEach(receipt => {
-    if (receipt.items && receipt.items.length > 0) {
-      receipt.items.forEach(item => {
-        const price = parseFloat(item.price.toString());
-        if (!isNaN(price)) {
-          // Add to category total
-          const category = item.category || 'Other';
-          categoryTotals[category] = (categoryTotals[category] || 0) + price;
-          
-          // Add to overall total
-          totalSpent += price;
-        }
-      });
-    } else if (receipt.totalAmount) {
-      // If receipt has no items but has a total, add to "Other" category
-      categoryTotals['Other'] = (categoryTotals['Other'] || 0) + receipt.totalAmount;
-      totalSpent += receipt.totalAmount;
+  // Process each item
+  items.forEach(item => {
+    // Convert price to number if it's a string
+    const price = typeof item.price === 'string' 
+      ? parseFloat(item.price.replace(/[^0-9.-]+/g, '')) 
+      : item.price;
+      
+    if (!isNaN(price) && price > 0) {
+      // Standardize category name and handle missing categories
+      const category = item.category ? item.category.trim() : 'Other';
+      
+      // Add to category total
+      categoryTotals[category] = (categoryTotals[category] || 0) + price;
+      
+      // Add to overall total
+      total += price;
     }
   });
 
+  // Add the total to the result
   return {
-    totalSpent,
-    categoryTotals
+    ...categoryTotals,
+    total
   };
 }
