@@ -399,14 +399,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all receipt items (legacy endpoint)
+  // Get all receipt items
   app.get("/api/receipts/items", async (req: Request, res: Response) => {
     try {
       // Check if a receipt ID is provided as a query parameter
       const receiptId = req.query.receiptId ? parseInt(req.query.receiptId as string) : null;
       
       let items;
-      if (receiptId) {
+      if (receiptId && !isNaN(receiptId)) {
         // If receipt ID is provided, get items for that receipt
         items = await storage.getReceiptItemsByReceiptId(receiptId);
       } else {
