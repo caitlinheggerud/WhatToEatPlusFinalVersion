@@ -485,7 +485,9 @@ function Inventory() {
                               <td className="px-6 py-4">{item.quantity}</td>
                               <td className="px-6 py-4">
                                 {item.price ? (
-                                  <span className="text-green-600 font-medium">${item.price}</span>
+                                  <span className="text-green-600 font-medium">
+                                    {item.price.startsWith('$') ? item.price : `$${item.price}`}
+                                  </span>
                                 ) : (
                                   <span className="text-muted-foreground text-xs">Not set</span>
                                 )}

@@ -220,12 +220,18 @@ export class DatabaseStorage implements IStorage {
       
       // Don't set an expiry date by default - let the user add it manually
       
+      // Strip $ symbol from price if it exists to avoid duplication
+      let priceValue = item.price;
+      if (priceValue && priceValue.startsWith('$')) {
+        priceValue = priceValue.substring(1);
+      }
+      
       return this.createInventoryItem({
         name: item.name,
         description: item.description || null,
         quantity: "1", // Default quantity
         category: specificCategory,
-        price: item.price, // Include price from receipt item
+        price: priceValue, // Include price without $ to avoid duplication
         expiryDate: null, // No default expiry date
         isInInventory: true,
         sourceReceiptId: receiptId
