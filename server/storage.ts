@@ -218,21 +218,16 @@ export class DatabaseStorage implements IStorage {
       // Determine a more specific category for the item
       const specificCategory = this.determineFoodCategory(item.name);
       
-      // Don't set an expiry date by default - let the user add it manually
-      
-      // Strip $ symbol from price if it exists to avoid duplication
-      let priceValue = item.price;
-      if (priceValue && priceValue.startsWith('$')) {
-        priceValue = priceValue.substring(1);
-      }
+      // Calculate expiry date based on the specific category
+      const expiryDate = this.getDefaultExpiryDate(specificCategory);
       
       return this.createInventoryItem({
         name: item.name,
         description: item.description || null,
         quantity: "1", // Default quantity
         category: specificCategory,
-        price: priceValue, // Include price without $ to avoid duplication
-        expiryDate: null, // No default expiry date
+        price: item.price, // Include price from receipt item
+        expiryDate,
         isInInventory: true,
         sourceReceiptId: receiptId
       });
