@@ -405,7 +405,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Always return all receipt items for simplicity
       // This endpoint is used primarily for the dashboard
       const items = await storage.getReceiptItems();
-      return res.status(200).json(items || []);
+      
+      // Map generic categories to specific ones
+      const processedItems = items.map(item => {
+        if (!item.category || item.category === 'Food') {
+          // Determine a more specific food category based on the name
+          const name = item.name.toLowerCase();
+          
+          // Produce (fruits & vegetables)
+          if (/apple|orange|banana|lettuce|tomato|carrot|potato|broccoli|cabbage|spinach|kale|onion|garlic|pepper|grape|berry|strawberry|blueberry|melon|fruit|vegetable|produce|cucumber|celery|salad|greens|asparagus|avocado|corn|squash|zucchini|eggplant|lemon|lime|pear|peach|plum|pineapple|mango|ginger|bell pepper|green bean|peas/i.test(name)) {
+            return { ...item, category: "Produce" };
+          }
+          
+          // Meat
+          if (/beef|chicken|steak|pork|ham|turkey|ground beef|bacon|sausage|lamb|ribs|roast|meat|chuck|sirloin|burger|tenderloin|veal|brisket|hot dog|chorizo|duck|rabbit/i.test(name)) {
+            return { ...item, category: "Meat" };
+          }
+          
+          // Seafood
+          if (/fish|shrimp|salmon|tuna|cod|tilapia|crab|lobster|scallop|clam|oyster|mussel|seafood|sardine|anchovy|catfish|halibut|trout|squid|octopus|prawn|sushi|calamari/i.test(name)) {
+            return { ...item, category: "Seafood" };
+          }
+          
+          // Dairy
+          if (/milk|cheese|yogurt|butter|cream|sour cream|ice cream|dairy|cheddar|mozzarella|parmesan|cottage cheese|ricotta|brie|feta|gouda|swiss cheese|whipped cream|half and half|creamer|custard|pudding/i.test(name)) {
+            return { ...item, category: "Dairy" };
+          }
+          
+          // Bakery
+          if (/bread|muffin|cake|cookie|pie|pastry|roll|bun|bagel|croissant|toast|tortilla|wrap|dough|baked|bakery|donut|danish|flour|baking|brownie|scone|waffle|pancake/i.test(name)) {
+            return { ...item, category: "Bakery" };
+          }
+          
+          // Pantry
+          if (/pasta|rice|cereal|oil|vinegar|sauce|spice|herb|condiment|canned|can|jar|seasoning|soup|bean|lentil|grain|flour|sugar|syrup|honey|jam|peanut butter|ketchup|mustard|mayo|mayonnaise|dressing|olive oil|soy sauce|pasta sauce|broth|stock|noodle|mix|salt|pepper|pantry/i.test(name)) {
+            return { ...item, category: "Pantry" };
+          }
+          
+          // Frozen
+          if (/frozen|ice cream|popsicle|freezer|pizza|frozen meal|frozen dinner|frozen vegetable|frozen fruit|tv dinner|hot pocket|ice|sorbet|frozen breakfast|waffles|frozen dessert/i.test(name)) {
+            return { ...item, category: "Frozen" };
+          }
+          
+          // Beverages
+          if (/water|soda|pop|cola|juice|coffee|tea|beer|wine|alcohol|drink|beverage|milk|lemonade|smoothie|shake|energy drink|sports drink|sparkling water|cider|cocktail|liquor|vodka|whiskey|rum|gin|tequila/i.test(name)) {
+            return { ...item, category: "Beverages" };
+          }
+          
+          // Snacks
+          if (/chip|crisp|cracker|pretzel|popcorn|nut|snack|granola|bar|candy|chocolate|sweet|treat|gum|mints|trail mix|jerky|dried fruit|cookie|biscuit|snack bar|rice cake|pork rind|corn chip|potato chip/i.test(name)) {
+            return { ...item, category: "Snacks" };
+          }
+          
+          // Default to "Other" for unknown items
+          return { ...item, category: "Other" };
+        }
+        
+        return item;
+      });
+      
+      return res.status(200).json(processedItems || []);
     } catch (error) {
       console.error("Error fetching receipt items:", error);
       // Return an empty array instead of an error for better frontend experience

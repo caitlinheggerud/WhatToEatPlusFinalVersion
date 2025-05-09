@@ -233,7 +233,7 @@ export default function Dashboard() {
 
   // Calculate total by category
   const categoryTotals = categories.reduce((acc, category) => {
-    if (category) { // Make sure category is not undefined
+    if (category && category !== 'All') { // Make sure category is not undefined and not 'All'
       const total = receipts
         .filter(item => item.category === category)
         .reduce((sum, item) => {
@@ -244,7 +244,19 @@ export default function Dashboard() {
       acc[category] = total.toFixed(2);
     }
     return acc;
-  }, {} as Record<string, string>);
+  }, {
+    // Initialize all standard categories with zero
+    "Produce": "0.00",
+    "Meat": "0.00",
+    "Seafood": "0.00",
+    "Dairy": "0.00",
+    "Bakery": "0.00",
+    "Pantry": "0.00",
+    "Frozen": "0.00",
+    "Beverages": "0.00",
+    "Snacks": "0.00",
+    "Other": "0.00"
+  } as Record<string, string>);
 
   // Calculate grand total
   const grandTotal = receipts.reduce((sum, item) => {
@@ -571,8 +583,16 @@ export default function Dashboard() {
                         <tbody>
                           {filteredReceipts.map((item, index) => {
                             const categoryColor = 
-                              item.category === "Food" ? "#10b981" : 
-                              item.category === "Household" ? "#3b82f6" : "#a855f7";
+                              item.category === "Produce" ? "#10b981" :
+                              item.category === "Meat" ? "#ef4444" : 
+                              item.category === "Seafood" ? "#3b82f6" : 
+                              item.category === "Dairy" ? "#f59e0b" : 
+                              item.category === "Bakery" ? "#8b5cf6" : 
+                              item.category === "Pantry" ? "#ec4899" :
+                              item.category === "Frozen" ? "#0ea5e9" :
+                              item.category === "Beverages" ? "#14b8a6" :
+                              item.category === "Snacks" ? "#d946ef" :
+                              "#a855f7";
                               
                             return (
                               <tr 
