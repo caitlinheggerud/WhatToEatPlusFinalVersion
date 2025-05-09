@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { getReceipts, getReceiptItems, getInventoryItems } from "@/lib/api";
+import { getReceipts, getReceiptItems } from "@/lib/api";
 import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,6 @@ import { DownloadIcon, PieChartIcon, BarChartIcon, CalendarIcon, FilterIcon, Upl
 import { Badge } from "@/components/ui/badge";
 import { type ReceiptItemResponse } from "@shared/schema";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-
 import { format, parseISO, isAfter, isBefore, isValid, startOfDay } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -41,9 +40,6 @@ export default function Dashboard() {
 
   // Store receipt data with dates
   const [receiptData, setReceiptData] = useState<ReceiptData[]>([]);
-  
-  // Store inventory data for inventory-based spending tracking
-  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
   
   // Apply date filters
   useEffect(() => {
@@ -209,21 +205,6 @@ export default function Dashboard() {
           setAllReceipts([]);
           setReceipts([]);
         }
-        
-        // Fetch inventory items for inventory-based spending tracking
-        try {
-          const inventoryData = await getInventoryItems();
-          if (Array.isArray(inventoryData) && inventoryData.length > 0) {
-            setInventoryItems(inventoryData);
-            console.log("Loaded inventory items:", inventoryData.length);
-          } else {
-            console.log("No inventory items found");
-            setInventoryItems([]);
-          }
-        } catch (inventoryError) {
-          console.error("Error fetching inventory items:", inventoryError);
-          setInventoryItems([]);
-        }
       } catch (err) {
         console.error("Error fetching receipts:", err);
         toast({
@@ -242,19 +223,17 @@ export default function Dashboard() {
     fetchReceipts();
   }, [toast]);
 
-  // Get unique categories from both receipts and inventory
-  const receiptCategories = Array.from(new Set(receipts.map(item => item.category)));
-  const inventoryCategories = Array.from(new Set(inventoryItems.map(item => item.category)));
-  const categories = Array.from(new Set([...receiptCategories, ...inventoryCategories]));
+  // Get unique categories
+  const categories = Array.from(new Set(receipts.map(item => item.category)));
   
   // Filter receipts by category if a category is selected
   const filteredReceipts = activeCategory 
     ? receipts.filter(item => item.category === activeCategory)
     : receipts;
 
-  // Calculate total by category from receipts
+  // Calculate total by category
   const categoryTotals = categories.reduce((acc, category) => {
-    if (category && category !== 'All') { // Make sure category is not undefined and not 'All'
+    if (category) { // Make sure category is not undefined
       const total = receipts
         .filter(item => item.category === category)
         .reduce((sum, item) => {
@@ -265,74 +244,11 @@ export default function Dashboard() {
       acc[category] = total.toFixed(2);
     }
     return acc;
-  }, {
-    // Initialize all standard categories with zero
-    "Produce": "0.00",
-    "Meat": "0.00",
-    "Seafood": "0.00",
-    "Dairy": "0.00",
-    "Bakery": "0.00",
-    "Pantry": "0.00",
-    "Frozen": "0.00",
-    "Beverages": "0.00",
-    "Snacks": "0.00",
-    "Other": "0.00"
-  } as Record<string, string>);
+  }, {} as Record<string, string>);
 
-  // Calculate total by category from inventory
-  const inventoryCategoryTotals = categories.reduce((acc, category) => {
-    if (category && category !== 'All') {
-      const total = inventoryItems
-        .filter(item => item.category === category)
-        .reduce((sum, item) => {
-          // Handle various forms of price data
-          let price = 0;
-          if (item.price) {
-            // If price is a string like "$10.99"
-            if (typeof item.price === 'string') {
-              price = parseFloat(item.price.replace(/[^0-9.-]+/g, ""));
-            } 
-            // If price is already a number
-            else if (typeof item.price === 'number') {
-              price = item.price;
-            }
-          }
-          return sum + (isNaN(price) ? 0 : price);
-        }, 0);
-      
-      acc[category] = total.toFixed(2);
-    }
-    return acc;
-  }, {
-    // Initialize all standard categories with zero
-    "Produce": "0.00",
-    "Meat": "0.00",
-    "Seafood": "0.00",
-    "Dairy": "0.00",
-    "Bakery": "0.00",
-    "Pantry": "0.00",
-    "Frozen": "0.00",
-    "Beverages": "0.00",
-    "Snacks": "0.00",
-    "Other": "0.00"
-  } as Record<string, string>);
-
-  // Calculate grand total from receipts
+  // Calculate grand total
   const grandTotal = receipts.reduce((sum, item) => {
     const price = parseFloat(item.price.replace(/[^0-9.-]+/g, ""));
-    return sum + (isNaN(price) ? 0 : price);
-  }, 0).toFixed(2);
-  
-  // Calculate grand total from inventory
-  const inventoryGrandTotal = inventoryItems.reduce((sum, item) => {
-    let price = 0;
-    if (item.price) {
-      if (typeof item.price === 'string') {
-        price = parseFloat(item.price.replace(/[^0-9.-]+/g, ""));
-      } else if (typeof item.price === 'number') {
-        price = item.price;
-      }
-    }
     return sum + (isNaN(price) ? 0 : price);
   }, 0).toFixed(2);
 
@@ -537,7 +453,7 @@ export default function Dashboard() {
           <Card className="hover-card overflow-hidden border-border/60 shadow-sm">
             <div className="absolute top-0 h-1 w-full bg-gradient opacity-70"></div>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Receipt Spending</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Spent</CardTitle>
               <div className="rounded-full bg-primary/10 p-1.5">
                 <PieChartIcon className="h-4 w-4 text-primary" />
               </div>
@@ -551,31 +467,10 @@ export default function Dashboard() {
             </CardContent>
           </Card>
           
-          <Card className="hover-card overflow-hidden border-border/60 shadow-sm">
-            <div className="absolute top-0 h-1 w-full bg-gradient opacity-70"></div>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Inventory Value</CardTitle>
-              <div className="rounded-full bg-primary/10 p-1.5">
-                <PieChartIcon className="h-4 w-4 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">${inventoryGrandTotal}</div>
-              <p className="text-sm text-muted-foreground flex items-center mt-1">
-                <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
-                From {inventoryItems.length} inventory items
-              </p>
-            </CardContent>
-          </Card>
-          
-          {["Produce", "Meat", "Seafood", "Dairy", "Bakery", "Pantry", "Other"].map(category => {
+          {["Food", "Household", "Other"].map(category => {
             const categoryColor = 
-              category === "Produce" ? "#10b981" : 
-              category === "Meat" ? "#ef4444" : 
-              category === "Seafood" ? "#3b82f6" : 
-              category === "Dairy" ? "#f59e0b" : 
-              category === "Bakery" ? "#8b5cf6" : 
-              category === "Pantry" ? "#ec4899" : "#a855f7";
+              category === "Food" ? "#10b981" : 
+              category === "Household" ? "#3b82f6" : "#a855f7";
             
             return (
               <Card key={category} className="hover-card overflow-hidden border-border/60 shadow-sm">
@@ -672,16 +567,8 @@ export default function Dashboard() {
                         <tbody>
                           {filteredReceipts.map((item, index) => {
                             const categoryColor = 
-                              item.category === "Produce" ? "#10b981" :
-                              item.category === "Meat" ? "#ef4444" : 
-                              item.category === "Seafood" ? "#3b82f6" : 
-                              item.category === "Dairy" ? "#f59e0b" : 
-                              item.category === "Bakery" ? "#8b5cf6" : 
-                              item.category === "Pantry" ? "#ec4899" :
-                              item.category === "Frozen" ? "#0ea5e9" :
-                              item.category === "Beverages" ? "#14b8a6" :
-                              item.category === "Snacks" ? "#d946ef" :
-                              "#a855f7";
+                              item.category === "Food" ? "#10b981" : 
+                              item.category === "Household" ? "#3b82f6" : "#a855f7";
                               
                             return (
                               <tr 
@@ -749,9 +636,9 @@ export default function Dashboard() {
                   <div className="bg-white p-5 rounded-lg border border-border/60 shadow-sm transition-all hover:shadow-md">
                     <h3 className="text-base font-medium mb-1 flex items-center text-muted-foreground">
                       <PieChartIcon className="h-4 w-4 text-primary mr-2" />
-                      Receipt Expense Distribution
+                      Expense Distribution
                     </h3>
-                    <p className="text-xs text-muted-foreground mb-4">Breakdown of receipt expenses by category</p>
+                    <p className="text-xs text-muted-foreground mb-4">Breakdown of expenses by category</p>
                     
                     <div className="h-[260px] w-full">
                       {categories.length > 0 ? (
@@ -775,18 +662,11 @@ export default function Dashboard() {
                             >
                               {categories.filter(c => c).map((category, index) => {
                                 const colors = {
-                                  "Produce": "#10b981",
-                                  "Meat": "#ef4444",
-                                  "Seafood": "#3b82f6",
-                                  "Dairy": "#f59e0b",
-                                  "Bakery": "#8b5cf6",
-                                  "Pantry": "#ec4899",
-                                  "Frozen": "#0ea5e9",
-                                  "Beverages": "#14b8a6",
-                                  "Snacks": "#d946ef",
+                                  "Food": "#10b981", 
+                                  "Household": "#3b82f6", 
                                   "Other": "#a855f7",
                                   "Tax": "#f43f5e",
-                                  "Total": "#7c3aed"
+                                  "Total": "#8b5cf6" 
                                 };
                                 return (
                                 <Cell 
@@ -855,15 +735,8 @@ export default function Dashboard() {
                             >
                               {categories.filter(c => c && c !== "Total").map((category, index) => {
                                 const colors = {
-                                  "Produce": "#10b981",
-                                  "Meat": "#ef4444",
-                                  "Seafood": "#3b82f6",
-                                  "Dairy": "#f59e0b",
-                                  "Bakery": "#8b5cf6",
-                                  "Pantry": "#ec4899",
-                                  "Frozen": "#0ea5e9",
-                                  "Beverages": "#14b8a6",
-                                  "Snacks": "#d946ef",
+                                  "Food": "#10b981", 
+                                  "Household": "#3b82f6", 
                                   "Other": "#a855f7",
                                   "Tax": "#f43f5e"
                                 };
@@ -884,152 +757,6 @@ export default function Dashboard() {
                     </div>
                     <div className="text-center mt-1 pt-2 border-t border-border/30">
                       <p className="text-xs text-muted-foreground">Based on <span className="font-medium">{receipts.length}</span> items</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <h3 className="text-lg font-semibold mt-8 mb-4 text-primary">Inventory Value Analysis</h3>
-                <div className="grid gap-6 md:grid-cols-2">
-                  {/* Inventory Value Pie Chart */}
-                  <div className="bg-white p-5 rounded-lg border border-border/60 shadow-sm transition-all hover:shadow-md">
-                    <h3 className="text-base font-medium mb-1 flex items-center text-muted-foreground">
-                      <PieChartIcon className="h-4 w-4 text-green-500 mr-2" />
-                      Inventory Value Distribution
-                    </h3>
-                    <p className="text-xs text-muted-foreground mb-4">Breakdown of inventory value by category</p>
-                    
-                    <div className="h-[260px] w-full">
-                      {inventoryItems.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={categories.filter(c => c).map(category => ({
-                                name: category,
-                                value: parseFloat(inventoryCategoryTotals[category!] || "0")
-                              }))}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              outerRadius={90}
-                              innerRadius={40}
-                              fill="#8884d8"
-                              dataKey="value"
-                              nameKey="name"
-                              paddingAngle={3}
-                              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                            >
-                              {categories.filter(c => c).map((category, index) => {
-                                const colors = {
-                                  "Produce": "#10b981",
-                                  "Meat": "#ef4444",
-                                  "Seafood": "#3b82f6",
-                                  "Dairy": "#f59e0b",
-                                  "Bakery": "#8b5cf6",
-                                  "Pantry": "#ec4899",
-                                  "Frozen": "#0ea5e9",
-                                  "Beverages": "#14b8a6",
-                                  "Snacks": "#d946ef",
-                                  "Other": "#a855f7",
-                                  "Tax": "#f43f5e",
-                                  "Total": "#7c3aed"
-                                };
-                                return (
-                                <Cell 
-                                  key={`cell-${index}`} 
-                                  fill={category && colors[category as keyof typeof colors] || `#${Math.floor(Math.random() * 16777215).toString(16)}`}
-                                  strokeWidth={1}
-                                />
-                              )})}
-                            </Pie>
-                            <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
-                            <Legend 
-                              iconType="circle" 
-                              layout="horizontal" 
-                              verticalAlign="bottom" 
-                              align="center"
-                              wrapperStyle={{ fontSize: "12px", paddingTop: "15px" }}
-                            />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      ) : (
-                        <div className="h-full flex items-center justify-center">
-                          <p className="text-muted-foreground">No inventory data available</p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-center mt-1 pt-2 border-t border-border/30">
-                      <p className="text-xs text-muted-foreground">Total: <span className="font-medium">${inventoryGrandTotal}</span></p>
-                    </div>
-                  </div>
-                  
-                  {/* Inventory Value Bar Chart */}
-                  <div className="bg-white p-5 rounded-lg border border-border/60 shadow-sm transition-all hover:shadow-md">
-                    <h3 className="text-base font-medium mb-1 flex items-center text-muted-foreground">
-                      <BarChartIcon className="h-4 w-4 text-green-500 mr-2" />
-                      Inventory Value Comparison
-                    </h3>
-                    <p className="text-xs text-muted-foreground mb-4">Side-by-side comparison of inventory value by category</p>
-                    
-                    <div className="h-[260px] w-full">
-                      {inventoryItems.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart 
-                            data={categories.filter(c => c && c !== "Total").map(category => ({
-                              name: category,
-                              amount: parseFloat(inventoryCategoryTotals[category!] || "0")
-                            }))}
-                            margin={{ top: 10, right: 5, left: 5, bottom: 30 }}
-                          >
-                            <XAxis 
-                              dataKey="name" 
-                              tick={{ fontSize: 12 }}
-                              tickLine={false}
-                              axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
-                            />
-                            <YAxis 
-                              tick={{ fontSize: 12 }}
-                              tickLine={false}
-                              axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
-                              tickFormatter={(value) => `$${value}`}
-                            />
-                            <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
-                            <Bar 
-                              dataKey="amount" 
-                              fill="#10b981"  
-                              radius={[4, 4, 0, 0]}
-                              barSize={50}
-                            >
-                              {categories.filter(c => c && c !== "Total").map((category, index) => {
-                                const colors = {
-                                  "Produce": "#10b981",
-                                  "Meat": "#ef4444",
-                                  "Seafood": "#3b82f6",
-                                  "Dairy": "#f59e0b",
-                                  "Bakery": "#8b5cf6",
-                                  "Pantry": "#ec4899",
-                                  "Frozen": "#0ea5e9",
-                                  "Beverages": "#14b8a6",
-                                  "Snacks": "#d946ef",
-                                  "Other": "#a855f7",
-                                  "Tax": "#f43f5e"
-                                };
-                                return (
-                                <Cell 
-                                  key={`cell-${index}`} 
-                                  fill={category && colors[category as keyof typeof colors] || `#${Math.floor(Math.random() * 16777215).toString(16)}`}
-                                />
-                              )})}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
-                      ) : (
-                        <div className="h-full flex items-center justify-center">
-                          <p className="text-muted-foreground">No inventory data available</p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-center mt-1 pt-2 border-t border-border/30">
-                      <p className="text-xs text-muted-foreground">Based on <span className="font-medium">{inventoryItems.length}</span> inventory items</p>
                     </div>
                   </div>
                 </div>
