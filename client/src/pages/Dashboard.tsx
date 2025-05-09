@@ -467,10 +467,14 @@ export default function Dashboard() {
             </CardContent>
           </Card>
           
-          {["Food", "Household", "Other"].map(category => {
+          {["Produce", "Meat", "Seafood", "Dairy", "Bakery", "Pantry", "Other"].map(category => {
             const categoryColor = 
-              category === "Food" ? "#10b981" : 
-              category === "Household" ? "#3b82f6" : "#a855f7";
+              category === "Produce" ? "#10b981" : 
+              category === "Meat" ? "#ef4444" : 
+              category === "Seafood" ? "#3b82f6" : 
+              category === "Dairy" ? "#f59e0b" : 
+              category === "Bakery" ? "#8b5cf6" : 
+              category === "Pantry" ? "#ec4899" : "#a855f7";
             
             return (
               <Card key={category} className="hover-card overflow-hidden border-border/60 shadow-sm">
@@ -662,11 +666,18 @@ export default function Dashboard() {
                             >
                               {categories.filter(c => c).map((category, index) => {
                                 const colors = {
-                                  "Food": "#10b981", 
-                                  "Household": "#3b82f6", 
+                                  "Produce": "#10b981",
+                                  "Meat": "#ef4444",
+                                  "Seafood": "#3b82f6",
+                                  "Dairy": "#f59e0b",
+                                  "Bakery": "#8b5cf6",
+                                  "Pantry": "#ec4899",
+                                  "Frozen": "#0ea5e9",
+                                  "Beverages": "#14b8a6",
+                                  "Snacks": "#d946ef",
                                   "Other": "#a855f7",
                                   "Tax": "#f43f5e",
-                                  "Total": "#8b5cf6" 
+                                  "Total": "#7c3aed"
                                 };
                                 return (
                                 <Cell 
@@ -735,8 +746,15 @@ export default function Dashboard() {
                             >
                               {categories.filter(c => c && c !== "Total").map((category, index) => {
                                 const colors = {
-                                  "Food": "#10b981", 
-                                  "Household": "#3b82f6", 
+                                  "Produce": "#10b981",
+                                  "Meat": "#ef4444",
+                                  "Seafood": "#3b82f6",
+                                  "Dairy": "#f59e0b",
+                                  "Bakery": "#8b5cf6",
+                                  "Pantry": "#ec4899",
+                                  "Frozen": "#0ea5e9",
+                                  "Beverages": "#14b8a6",
+                                  "Snacks": "#d946ef",
                                   "Other": "#a855f7",
                                   "Tax": "#f43f5e"
                                 };
