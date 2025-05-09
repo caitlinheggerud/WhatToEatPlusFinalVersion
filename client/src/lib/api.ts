@@ -81,6 +81,14 @@ export async function addInventoryItem(item: any): Promise<any> {
 }
 
 /**
+ * Update an inventory item
+ */
+export async function updateInventoryItem(id: number, itemData: any): Promise<any> {
+  const response = await apiRequest('PATCH', `/api/inventory/${id}`, itemData);
+  return await response.json();
+}
+
+/**
  * Delete an inventory item
  */
 export async function deleteInventoryItem(id: number): Promise<any> {
