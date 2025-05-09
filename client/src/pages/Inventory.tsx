@@ -11,8 +11,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
-import { getInventoryItems, addInventoryItem, deleteInventoryItem } from '../lib/api';
+import { getInventoryItems, addInventoryItem, deleteInventoryItem, updateInventoryItem } from '../lib/api';
 import { 
   PlusIcon, 
   Trash2Icon, 
@@ -21,7 +29,8 @@ import {
   AlertCircleIcon,
   Loader2Icon,
   PackageIcon,
-  CalendarIcon
+  CalendarIcon,
+  Clock
 } from 'lucide-react';
 import { format, parseISO, isValid, addDays } from 'date-fns';
 
@@ -59,6 +68,9 @@ function Inventory() {
   const [filter, setFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [showNewItemForm, setShowNewItemForm] = useState<boolean>(false);
+  const [showExpiryDateModal, setShowExpiryDateModal] = useState<boolean>(false);
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [newExpiryDate, setNewExpiryDate] = useState<string>('');
   const [newItem, setNewItem] = useState({
     name: '',
     description: '',
@@ -154,6 +166,43 @@ function Inventory() {
       toast({
         title: "Error",
         description: "Failed to remove item from inventory",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Open expiry date modal
+  const openExpiryDateModal = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setNewExpiryDate(item.expiryDate || '');
+    setShowExpiryDateModal(true);
+  };
+  
+  // Update expiry date
+  const handleUpdateExpiryDate = async () => {
+    if (!selectedItem) return;
+    
+    try {
+      await updateInventoryItem(selectedItem.id, {
+        expiryDate: newExpiryDate || null
+      });
+      
+      toast({
+        title: "Success",
+        description: "Expiry date updated successfully",
+        variant: "default",
+      });
+      
+      // Refresh inventory
+      fetchInventoryItems();
+      
+      // Close modal
+      setShowExpiryDateModal(false);
+    } catch (err) {
+      console.error("Error updating expiry date:", err);
+      toast({
+        title: "Error",
+        description: "Failed to update expiry date",
         variant: "destructive",
       });
     }
@@ -433,14 +482,26 @@ function Inventory() {
                                 )}
                               </td>
                               <td className="px-6 py-4 text-right">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteItem(item.id)}
-                                  className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                                >
-                                  <Trash2Icon className="h-4 w-4" />
-                                </Button>
+                                <div className="flex justify-end space-x-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openExpiryDateModal(item)}
+                                    className="text-primary hover:text-primary/90 hover:bg-primary/10"
+                                    title="Add Expiration Date"
+                                  >
+                                    <CalendarIcon className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteItem(item.id)}
+                                    className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                                    title="Delete Item"
+                                  >
+                                    <Trash2Icon className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -474,14 +535,26 @@ function Inventory() {
                                   <p className="font-medium">{item.name}</p>
                                   <p className="text-xs text-muted-foreground">{item.quantity}</p>
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteItem(item.id)}
-                                  className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                                >
-                                  <Trash2Icon className="h-4 w-4" />
-                                </Button>
+                                <div className="flex space-x-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openExpiryDateModal(item)}
+                                    className="text-primary hover:text-primary/90 hover:bg-primary/10"
+                                    title="Add Expiration Date"
+                                  >
+                                    <CalendarIcon className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteItem(item.id)}
+                                    className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                                    title="Delete Item"
+                                  >
+                                    <Trash2Icon className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </li>
                             ))}
                           </ul>
@@ -495,6 +568,43 @@ function Inventory() {
           )}
         </>
       )}
+      
+      {/* Expiry Date Modal */}
+      <Dialog open={showExpiryDateModal} onOpenChange={setShowExpiryDateModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add Expiration Date</DialogTitle>
+            <DialogDescription>
+              Set an expiration date for {selectedItem?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="expiryDate" className="col-span-4">
+                Expiration Date
+              </Label>
+              <div className="col-span-4">
+                <Input
+                  id="expiryDate"
+                  type="date"
+                  value={newExpiryDate}
+                  onChange={(e) => setNewExpiryDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowExpiryDateModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateExpiryDate} className="bg-gradient">
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
