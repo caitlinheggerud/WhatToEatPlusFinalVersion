@@ -9,8 +9,7 @@ import { DownloadIcon, PieChartIcon, BarChartIcon, CalendarIcon, FilterIcon, Upl
 import { Badge } from "@/components/ui/badge";
 import { type ReceiptItemResponse } from "@shared/schema";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import InventoryValueChart from '@/components/InventoryValueChart';
-import InventoryBarChart from '@/components/InventoryBarChart';
+
 import { format, parseISO, isAfter, isBefore, isValid, startOfDay } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -891,16 +890,148 @@ export default function Dashboard() {
                 
                 <h3 className="text-lg font-semibold mt-8 mb-4 text-primary">Inventory Value Analysis</h3>
                 <div className="grid gap-6 md:grid-cols-2">
-                  <InventoryValueChart 
-                    inventoryItems={inventoryItems}
-                    inventoryCategoryTotals={inventoryCategoryTotals}
-                    inventoryGrandTotal={inventoryGrandTotal}
-                  />
+                  {/* Inventory Value Pie Chart */}
+                  <div className="bg-white p-5 rounded-lg border border-border/60 shadow-sm transition-all hover:shadow-md">
+                    <h3 className="text-base font-medium mb-1 flex items-center text-muted-foreground">
+                      <PieChartIcon className="h-4 w-4 text-green-500 mr-2" />
+                      Inventory Value Distribution
+                    </h3>
+                    <p className="text-xs text-muted-foreground mb-4">Breakdown of inventory value by category</p>
+                    
+                    <div className="h-[260px] w-full">
+                      {inventoryItems.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={categories.filter(c => c).map(category => ({
+                                name: category,
+                                value: parseFloat(inventoryCategoryTotals[category!] || "0")
+                              }))}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              outerRadius={90}
+                              innerRadius={40}
+                              fill="#8884d8"
+                              dataKey="value"
+                              nameKey="name"
+                              paddingAngle={3}
+                              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                            >
+                              {categories.filter(c => c).map((category, index) => {
+                                const colors = {
+                                  "Produce": "#10b981",
+                                  "Meat": "#ef4444",
+                                  "Seafood": "#3b82f6",
+                                  "Dairy": "#f59e0b",
+                                  "Bakery": "#8b5cf6",
+                                  "Pantry": "#ec4899",
+                                  "Frozen": "#0ea5e9",
+                                  "Beverages": "#14b8a6",
+                                  "Snacks": "#d946ef",
+                                  "Other": "#a855f7",
+                                  "Tax": "#f43f5e",
+                                  "Total": "#7c3aed"
+                                };
+                                return (
+                                <Cell 
+                                  key={`cell-${index}`} 
+                                  fill={category && colors[category as keyof typeof colors] || `#${Math.floor(Math.random() * 16777215).toString(16)}`}
+                                  strokeWidth={1}
+                                />
+                              )})}
+                            </Pie>
+                            <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
+                            <Legend 
+                              iconType="circle" 
+                              layout="horizontal" 
+                              verticalAlign="bottom" 
+                              align="center"
+                              wrapperStyle={{ fontSize: "12px", paddingTop: "15px" }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-full flex items-center justify-center">
+                          <p className="text-muted-foreground">No inventory data available</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-center mt-1 pt-2 border-t border-border/30">
+                      <p className="text-xs text-muted-foreground">Total: <span className="font-medium">${inventoryGrandTotal}</span></p>
+                    </div>
+                  </div>
                   
-                  <InventoryBarChart
-                    inventoryItems={inventoryItems}
-                    inventoryCategoryTotals={inventoryCategoryTotals}
-                  />
+                  {/* Inventory Value Bar Chart */}
+                  <div className="bg-white p-5 rounded-lg border border-border/60 shadow-sm transition-all hover:shadow-md">
+                    <h3 className="text-base font-medium mb-1 flex items-center text-muted-foreground">
+                      <BarChartIcon className="h-4 w-4 text-green-500 mr-2" />
+                      Inventory Value Comparison
+                    </h3>
+                    <p className="text-xs text-muted-foreground mb-4">Side-by-side comparison of inventory value by category</p>
+                    
+                    <div className="h-[260px] w-full">
+                      {inventoryItems.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart 
+                            data={categories.filter(c => c && c !== "Total").map(category => ({
+                              name: category,
+                              amount: parseFloat(inventoryCategoryTotals[category!] || "0")
+                            }))}
+                            margin={{ top: 10, right: 5, left: 5, bottom: 30 }}
+                          >
+                            <XAxis 
+                              dataKey="name" 
+                              tick={{ fontSize: 12 }}
+                              tickLine={false}
+                              axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
+                            />
+                            <YAxis 
+                              tick={{ fontSize: 12 }}
+                              tickLine={false}
+                              axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
+                              tickFormatter={(value) => `$${value}`}
+                            />
+                            <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
+                            <Bar 
+                              dataKey="amount" 
+                              fill="#10b981"  
+                              radius={[4, 4, 0, 0]}
+                              barSize={50}
+                            >
+                              {categories.filter(c => c && c !== "Total").map((category, index) => {
+                                const colors = {
+                                  "Produce": "#10b981",
+                                  "Meat": "#ef4444",
+                                  "Seafood": "#3b82f6",
+                                  "Dairy": "#f59e0b",
+                                  "Bakery": "#8b5cf6",
+                                  "Pantry": "#ec4899",
+                                  "Frozen": "#0ea5e9",
+                                  "Beverages": "#14b8a6",
+                                  "Snacks": "#d946ef",
+                                  "Other": "#a855f7",
+                                  "Tax": "#f43f5e"
+                                };
+                                return (
+                                <Cell 
+                                  key={`cell-${index}`} 
+                                  fill={category && colors[category as keyof typeof colors] || `#${Math.floor(Math.random() * 16777215).toString(16)}`}
+                                />
+                              )})}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-full flex items-center justify-center">
+                          <p className="text-muted-foreground">No inventory data available</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-center mt-1 pt-2 border-t border-border/30">
+                      <p className="text-xs text-muted-foreground">Based on <span className="font-medium">{inventoryItems.length}</span> inventory items</p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
