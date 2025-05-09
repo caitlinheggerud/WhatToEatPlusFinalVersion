@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { getReceipts, getReceiptItems } from "@/lib/api";
 import { useLocation } from "wouter";
+import { useSpending } from "@/contexts/SpendingContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,9 @@ export default function Dashboard() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // Get access to spending context
+  const { categoryTotals: spendingCategoryTotals, totalSpent, updateSpendingData } = useSpending();
+
   useEffect(() => {
     async function fetchReceipts() {
       try {
@@ -29,6 +33,9 @@ export default function Dashboard() {
             // Get all receipt items using the updated endpoint
             const allItems = await getReceiptItems();
             setReceipts(allItems);
+            
+            // Update the spending data in the context
+            updateSpendingData(allItems);
           } catch (itemsError) {
             console.error("Error fetching receipt items:", itemsError);
             // Fallback to empty items if there's an error
@@ -52,7 +59,7 @@ export default function Dashboard() {
     }
 
     fetchReceipts();
-  }, [toast]);
+  }, [toast, updateSpendingData]);
 
   // Get unique categories
   const categories = Array.from(new Set(receipts.map(item => item.category)));
@@ -234,7 +241,7 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">${grandTotal}</div>
+              <div className="text-3xl font-bold">${totalSpent.toFixed(2)}</div>
               <p className="text-sm text-muted-foreground flex items-center mt-1">
                 <span className="inline-block w-2 h-2 rounded-full bg-primary mr-2"></span>
                 From {receipts.length} items
@@ -258,7 +265,7 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">
-                    ${categoryTotals[category] || "0.00"}
+                    ${spendingCategoryTotals[category] ? spendingCategoryTotals[category].toFixed(2) : "0.00"}
                   </div>
                   <p className="text-sm text-muted-foreground flex items-center mt-1">
                     <span className="inline-block w-2 h-2 rounded-full mr-2" style={{ backgroundColor: categoryColor }}></span>
@@ -422,7 +429,7 @@ export default function Dashboard() {
                             <Pie
                               data={categories.filter(c => c).map(category => ({
                                 name: category,
-                                value: parseFloat(categoryTotals[category!] || "0")
+                                value: spendingCategoryTotals[category!] || 0
                               }))}
                               cx="50%"
                               cy="50%"
@@ -485,7 +492,7 @@ export default function Dashboard() {
                           <BarChart 
                             data={categories.filter(c => c && c !== "Total").map(category => ({
                               name: category,
-                              amount: parseFloat(categoryTotals[category!] || "0")
+                              amount: spendingCategoryTotals[category!] || 0
                             }))}
                             margin={{ top: 10, right: 5, left: 5, bottom: 30 }}
                           >
@@ -666,7 +673,7 @@ export default function Dashboard() {
                       <div className="space-y-2">
                         <p className="text-sm font-medium">Monthly Expense Report</p>
                         <p className="text-xs text-muted-foreground">May 2025</p>
-                        <p className="text-xs text-muted-foreground">Total: ${grandTotal}</p>
+                        <p className="text-xs text-muted-foreground">Total: ${totalSpent.toFixed(2)}</p>
                       </div>
                     </div>
                     

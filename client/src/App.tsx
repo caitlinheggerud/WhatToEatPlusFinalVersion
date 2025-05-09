@@ -15,6 +15,7 @@ import Landing from "@/pages/Landing";
 import { Navbar } from "@/components/ui/navbar";
 import { Toaster } from "@/components/ui/toaster";
 import "@/lib/clearFavorites"; // Import the favorites cleaning utility
+import { SpendingProvider } from "./contexts/SpendingContext";
 
 function Router() {
   return (
@@ -36,15 +37,17 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="flex min-h-screen flex-col bg-background">
-          <Navbar />
-          <main className="flex-1">
-            <Router />
-          </main>
-        </div>
-        <Toaster />
-      </TooltipProvider>
+      <SpendingProvider>
+        <TooltipProvider>
+          <div className="flex min-h-screen flex-col bg-background">
+            <Navbar />
+            <main className="flex-1">
+              <Router />
+            </main>
+          </div>
+          <Toaster />
+        </TooltipProvider>
+      </SpendingProvider>
     </QueryClientProvider>
   );
 }
