@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
+import { useSpending } from "@/contexts/SpendingContext";
 
 // Define Receipt type based on API response
 interface Receipt {
@@ -31,6 +32,9 @@ export default function Receipts() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [addingToInventory, setAddingToInventory] = useState(false);
   const { toast } = useToast();
+  
+  // Get access to spending context
+  const { updateSpendingData } = useSpending();
   
   // Use location for navigation
   const [, navigate] = useLocation();
@@ -75,6 +79,11 @@ export default function Receipts() {
       };
       
       setSelectedReceipt(receipt);
+      
+      // Update the spending data in the context when viewing a receipt
+      if (receipt.items && receipt.items.length > 0) {
+        updateSpendingData(receipt.items);
+      }
     } catch (err) {
       console.error("Error fetching receipt details:", err);
       toast({
