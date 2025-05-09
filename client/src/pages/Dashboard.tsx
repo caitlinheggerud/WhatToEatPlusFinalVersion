@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { getReceipts, getReceiptItems } from "@/lib/api";
+import { getReceipts, getReceiptItems, getInventoryItems } from "@/lib/api";
 import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +40,9 @@ export default function Dashboard() {
 
   // Store receipt data with dates
   const [receiptData, setReceiptData] = useState<ReceiptData[]>([]);
+  
+  // Store inventory data for inventory-based spending tracking
+  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
   
   // Apply date filters
   useEffect(() => {
@@ -205,6 +208,21 @@ export default function Dashboard() {
           setAllReceipts([]);
           setReceipts([]);
         }
+        
+        // Fetch inventory items for inventory-based spending tracking
+        try {
+          const inventoryData = await getInventoryItems();
+          if (Array.isArray(inventoryData) && inventoryData.length > 0) {
+            setInventoryItems(inventoryData);
+            console.log("Loaded inventory items:", inventoryData.length);
+          } else {
+            console.log("No inventory items found");
+            setInventoryItems([]);
+          }
+        } catch (inventoryError) {
+          console.error("Error fetching inventory items:", inventoryError);
+          setInventoryItems([]);
+        }
       } catch (err) {
         console.error("Error fetching receipts:", err);
         toast({
@@ -223,15 +241,17 @@ export default function Dashboard() {
     fetchReceipts();
   }, [toast]);
 
-  // Get unique categories
-  const categories = Array.from(new Set(receipts.map(item => item.category)));
+  // Get unique categories from both receipts and inventory
+  const receiptCategories = Array.from(new Set(receipts.map(item => item.category)));
+  const inventoryCategories = Array.from(new Set(inventoryItems.map(item => item.category)));
+  const categories = Array.from(new Set([...receiptCategories, ...inventoryCategories]));
   
   // Filter receipts by category if a category is selected
   const filteredReceipts = activeCategory 
     ? receipts.filter(item => item.category === activeCategory)
     : receipts;
 
-  // Calculate total by category
+  // Calculate total by category from receipts
   const categoryTotals = categories.reduce((acc, category) => {
     if (category && category !== 'All') { // Make sure category is not undefined and not 'All'
       const total = receipts
@@ -258,9 +278,60 @@ export default function Dashboard() {
     "Other": "0.00"
   } as Record<string, string>);
 
-  // Calculate grand total
+  // Calculate total by category from inventory
+  const inventoryCategoryTotals = categories.reduce((acc, category) => {
+    if (category && category !== 'All') {
+      const total = inventoryItems
+        .filter(item => item.category === category)
+        .reduce((sum, item) => {
+          // Handle various forms of price data
+          let price = 0;
+          if (item.price) {
+            // If price is a string like "$10.99"
+            if (typeof item.price === 'string') {
+              price = parseFloat(item.price.replace(/[^0-9.-]+/g, ""));
+            } 
+            // If price is already a number
+            else if (typeof item.price === 'number') {
+              price = item.price;
+            }
+          }
+          return sum + (isNaN(price) ? 0 : price);
+        }, 0);
+      
+      acc[category] = total.toFixed(2);
+    }
+    return acc;
+  }, {
+    // Initialize all standard categories with zero
+    "Produce": "0.00",
+    "Meat": "0.00",
+    "Seafood": "0.00",
+    "Dairy": "0.00",
+    "Bakery": "0.00",
+    "Pantry": "0.00",
+    "Frozen": "0.00",
+    "Beverages": "0.00",
+    "Snacks": "0.00",
+    "Other": "0.00"
+  } as Record<string, string>);
+
+  // Calculate grand total from receipts
   const grandTotal = receipts.reduce((sum, item) => {
     const price = parseFloat(item.price.replace(/[^0-9.-]+/g, ""));
+    return sum + (isNaN(price) ? 0 : price);
+  }, 0).toFixed(2);
+  
+  // Calculate grand total from inventory
+  const inventoryGrandTotal = inventoryItems.reduce((sum, item) => {
+    let price = 0;
+    if (item.price) {
+      if (typeof item.price === 'string') {
+        price = parseFloat(item.price.replace(/[^0-9.-]+/g, ""));
+      } else if (typeof item.price === 'number') {
+        price = item.price;
+      }
+    }
     return sum + (isNaN(price) ? 0 : price);
   }, 0).toFixed(2);
 
