@@ -119,6 +119,224 @@ Detailed charts and visualizations help you understand your grocery spending pat
 - **DeepAI**: Image enhancement API for improving receipt image quality
 - **OpenAI API**: (Optional) For potential future features like recipe customization
 
+## 🤖 External API Integration
+
+WhatToEat+ leverages several powerful external APIs to deliver its core functionality. Here's a detailed breakdown of how each API is integrated and utilized:
+
+### Google Gemini API
+
+**Purpose**: Powers the core receipt scanning and item extraction functionality.
+
+**Integration Details**:
+- **API Version**: Gemini 2.5 Flash Preview (04-17)
+- **Implementation**: Located in `server/routes.ts` in the `/api/receipts/analyze` endpoint
+- **Input**: Receipt images (JPG, PNG) uploaded by users
+- **Output**: Structured JSON data containing extracted items, prices, and categories
+- **Features Utilized**:
+  - Multimodal capabilities (both text and image processing)
+  - Zero-shot learning for item recognition without explicit training
+  - Context-aware understanding of receipt formats and structures
+
+**Processing Flow**:
+1. Image is uploaded and converted to base64 format
+2. A specialized prompt instructs Gemini on how to process the receipt
+3. The multimodal API analyzes text and layout to identify items, prices, and categories
+4. Robust error handling and cleaning processes ensure valid JSON output
+5. Additional fallback logic calculates missing values (e.g., derives GST if not explicitly found)
+
+**API Optimization**:
+- Custom prompting techniques to maximize accuracy
+- Resilient parsing that handles various receipt formats
+- Sophisticated error handling for edge cases
+- JSON sanitation to ensure valid output despite API response variations
+
+**Example Prompt Structure**:
+```
+Analyze this receipt and extract the items, GST (tax), and total in a simple JSON format.
+
+Format each regular item as:
+{"name": "Item Name", "description": "Details if any", "price": "$XX.XX", "category": "Food/Beverage/etc"}
+
+Be sure to include GST/tax:
+{"name": "GST", "description": "Goods and Services Tax", "price": "$X.XX", "category": "Tax"}
+
+And the total:
+{"name": "TOTAL", "description": "Total Payment", "price": "$XX.XX", "category": "Total"}
+
+Return ONLY a properly formatted JSON array with no explanations.
+```
+
+### Spoonacular API
+
+**Purpose**: Provides recipe recommendations, nutritional information, and advanced filtering capabilities.
+
+**Integration Details**:
+- **Implementation**: Located in `server/spoonacular.ts` with endpoints exposed in `server/routes.ts`
+- **Primary Endpoints Used**:
+  - `/recipes/complexSearch`: For filtered recipe search
+  - `/recipes/random`: For discovering new recipes
+  - `/recipes/{id}/information`: For detailed recipe information
+  - `/recipes/{id}/nutritionWidget`: For nutritional breakdown
+
+**Key Features Implemented**:
+1. **Recipe Search with Advanced Filtering**:
+   - Meal type filtering (breakfast, lunch, dinner, etc.)
+   - Dietary preference filtering (vegetarian, vegan, gluten-free, etc.)
+   - Allergen exclusion
+   - Cooking time filtering
+   - Ingredient-based search
+   
+2. **Recipe Data Transformation**:
+   - Custom mapping function (`mapSpoonacularRecipeToAppRecipe`) transforms the API response to match our application's data model
+   - Image URL processing for optimal display
+   - Ingredient list normalization
+
+3. **Inventory-Based Recipe Matching**:
+   - Intelligently matches user's inventory items with recipe ingredients
+   - Implements fuzzy matching for ingredients (e.g., "tomatoes" will match "cherry tomatoes")
+   - Calculates a "can make" score based on what percentage of ingredients the user has
+
+4. **Nutritional Analysis**:
+   - Calculates per-serving nutritional information
+   - Provides macro and micronutrient breakdowns
+   - Supports serving size adjustments
+
+**Fallback Mechanisms**:
+- Local database cache of recipes for when API limits are reached
+- Graceful error handling for API outages
+- Automatic retry logic for transient errors
+
+**Example API Call Structure**:
+```typescript
+// Example of a complex recipe search with multiple parameters
+export async function searchRecipes(
+  query: string,
+  diet?: string,
+  mealType?: string,
+  maxReadyTime?: number,
+  intolerances?: string
+): Promise<any> {
+  const params = new URLSearchParams({
+    apiKey: process.env.SPOONACULAR_API_KEY,
+    query,
+    number: '10',
+    addRecipeInformation: 'true',
+    fillIngredients: 'true',
+    instructionsRequired: 'true'
+  });
+
+  if (diet) params.append('diet', diet);
+  if (mealType) params.append('type', mealType);
+  if (maxReadyTime) params.append('maxReadyTime', maxReadyTime.toString());
+  if (intolerances) params.append('intolerances', intolerances);
+
+  const response = await fetch(
+    `https://api.spoonacular.com/recipes/complexSearch?${params.toString()}`
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Spoonacular API error: ${error.message || response.statusText}`);
+  }
+
+  return await response.json();
+}
+```
+
+### DeepAI API
+
+**Purpose**: Enhances receipt image quality for improved OCR and item extraction.
+
+**Integration Details**:
+- **Implementation**: Located in `server/deepai.ts`
+- **Endpoints Used**:
+  - `/api/colorizer`: For enhancing black and white or faded receipts
+  - `/api/torch-srgan`: For super-resolution to clarify blurry images
+
+**Usage Flow**:
+1. **Pre-processing Assessment**:
+   - Before sending to Gemini API, receipt images are analyzed for quality issues
+   - Low contrast, blurry, or faded receipts are identified for enhancement
+   
+2. **Image Enhancement Pipeline**:
+   - **Color Enhancement**: Improves color balance and contrast
+   - **Resolution Enhancement**: Increases clarity of text for better OCR results
+   
+3. **Integration with Receipt Processing**:
+   - Enhanced images are then passed to Gemini API for item extraction
+   - Fall back to original image if enhancement fails or times out
+
+**Example Implementation**:
+```typescript
+export async function enhanceImage(imageUrl: string): Promise<string> {
+  try {
+    const formData = new FormData();
+    formData.append('image', imageUrl);
+
+    const response = await fetch('https://api.deepai.org/api/colorizer', {
+      method: 'POST',
+      headers: {
+        'api-key': process.env.DEEPAI_API_KEY,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`DeepAI API error: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.output_url;
+  } catch (error) {
+    console.error('Error enhancing image:', error);
+    // Return original image URL as fallback
+    return imageUrl;
+  }
+}
+```
+
+### OpenAI API (Optional)
+
+**Purpose**: Adds potential advanced features like natural language recipe customization and personalized recommendations.
+
+**Potential Implementations**:
+1. **Recipe Customization**:
+   - Natural language processing to understand recipe modification requests
+   - Intelligent substitution suggestions for dietary restrictions
+   - Cooking technique adaptations based on available equipment
+
+2. **Personalized Nutritional Insights**:
+   - Analysis of eating patterns and nutritional balance
+   - Personalized recommendations for dietary improvements
+   - Natural language explanations of nutritional concepts
+
+3. **Smart Meal Planning**:
+   - Generate weekly meal plans based on inventory and preferences
+   - Balance nutritional needs across multiple days
+   - Accommodate household preferences and dietary restrictions
+
+## API Integration Strategy
+
+### API Key Management
+- All API keys are stored as environment variables
+- Never exposed to client-side code
+- Accessed only through secure server-side endpoints
+
+### Error Handling & Fallbacks
+- Comprehensive error handling for all API calls
+- Graceful degradation when APIs are unavailable
+- Local database fallbacks for essential functionality
+
+### Rate Limiting & Optimization
+- Intelligent caching to minimize API calls
+- Background processing for non-critical API operations
+- Request batching where supported by APIs
+
+### Data Transformation
+- Custom mapping functions to transform API responses to application data models
+- Consistent error handling and retry mechanisms
+- Type-safe interfaces for all API interactions
+
 ### DevOps & Infrastructure
 - **Vite**: Fast development server and optimized production builds
 - **ESLint & Prettier**: Code quality and formatting
