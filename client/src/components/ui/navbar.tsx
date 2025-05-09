@@ -28,7 +28,12 @@ export function Navbar() {
       if (storedFavorites) {
         try {
           const favorites = JSON.parse(storedFavorites);
-          setFavoritesCount(Array.isArray(favorites) ? favorites.length : 0);
+          // Only count non-empty arrays
+          if (Array.isArray(favorites) && favorites.length > 0) {
+            setFavoritesCount(favorites.length);
+          } else {
+            setFavoritesCount(0);
+          }
         } catch (e) {
           console.error("Failed to parse favorites in navbar:", e);
           setFavoritesCount(0);
@@ -52,11 +57,13 @@ export function Navbar() {
     const handleFavoritesUpdated = (e: Event) => {
       const customEvent = e as CustomEvent;
       if (customEvent.detail && customEvent.detail.favorites) {
-        setFavoritesCount(
-          Array.isArray(customEvent.detail.favorites) 
-            ? customEvent.detail.favorites.length 
-            : 0
-        );
+        const favorites = customEvent.detail.favorites;
+        // Only count non-empty arrays
+        if (Array.isArray(favorites) && favorites.length > 0) {
+          setFavoritesCount(favorites.length);
+        } else {
+          setFavoritesCount(0);
+        }
       } else {
         checkFavorites();
       }
@@ -65,8 +72,20 @@ export function Navbar() {
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('favoritesUpdated', handleFavoritesUpdated);
     
+    // Check for both favorites and recipeData to ensure consistency
+    const checkAllFavorites = () => {
+      checkFavorites();
+      
+      // Additionally, clean up favoriteRecipeData if favorites is empty/invalid
+      const storedFavorites = localStorage.getItem('favorites');
+      if (!storedFavorites || storedFavorites === '[]') {
+        // If there are no favorites, make sure favoriteRecipeData is also cleared
+        localStorage.removeItem('favoriteRecipeData');
+      }
+    };
+    
     // Also set up interval to check periodically (localStorage events don't trigger in same window)
-    const interval = setInterval(checkFavorites, 1000);
+    const interval = setInterval(checkAllFavorites, 1000);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
