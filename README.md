@@ -721,82 +721,266 @@ Implementation Details:
 
 ## 🗃 Database Schema
 
-WhatToEat+ uses a PostgreSQL database with the following key tables:
+WhatToEat+ uses a PostgreSQL database managed through Drizzle ORM for type-safe database operations. The schema is defined in `shared/schema.ts` and provides a comprehensive data model for the application.
+
+### Entity Relationship Diagram
+
+```
+┌─────────────┐       ┌──────────────┐       ┌─────────────────┐
+│   Users     │       │   Receipts   │       │  Receipt Items  │
+├─────────────┤       ├──────────────┤       ├─────────────────┤
+│ id          │       │ id           │       │ id              │
+│ username    │       │ store        │       │ receiptId       │─────┐
+│ password    │       │ totalAmount  │       │ name            │     │
+│ email       │       │ date         │  ┌────│ description     │     │
+│ createdAt   │       │ createdAt    │  │    │ price           │     │
+└─────────────┘       │ userId       │──┘    │ category        │     │
+                      └──────────────┘       │ createdAt       │     │
+                            │                └─────────────────┘     │
+                            │                                        │
+                            ▼                                        │
+┌──────────────────┐     ┌────────────────┐                         │
+│ Inventory Items  │     │    Recipes     │                         │
+├──────────────────┤     ├────────────────┤                         │
+│ id               │     │ id             │                         │
+│ name             │     │ title          │                         │
+│ description      │     │ description    │                         │
+│ category         │     │ imageUrl       │                         │
+│ quantity         │     │ instructions   │                         │
+│ unit             │     │ prepTime       │                         │
+│ expiryDate       │     │ cookTime       │                         │
+│ isInInventory    │     │ servings       │                         │
+│ receiptItemId    │─────┘ sourceUrl      │                         │
+│ createdAt        │      │ mealTypeId    │───┐                     │
+│ updatedAt        │      │ createdAt     │   │                     │
+└──────────────────┘      │ updatedAt     │   │                     │
+         ▲                └────────────────┘   │                     │
+         │                       │             │                     │
+         │                       ▼             │                     │
+         │           ┌───────────────────┐     │                     │
+         │           │ Recipe Ingredients│     │                     │
+         │           ├───────────────────┤     │                     │
+         └───────────│ id                │     │                     │
+                     │ recipeId          │     │                     │
+                     │ name              │     │                     │
+                     │ amount            │     │                     │
+                     │ unit              │     │                     │
+                     │ isOptional        │     │                     │
+                     └───────────────────┘     │                     │
+                                               │                     │
+                      ┌────────────────────┐   │                     │
+                      │   Meal Types       │   │                     │
+                      ├────────────────────┤   │                     │
+                      │ id                 │◄──┘                     │
+                      │ name               │                         │
+                      │ description        │                         │
+                      └────────────────────┘                         │
+                                                                     │
+┌────────────────────────┐     ┌────────────────────────┐           │
+│  Dietary Preferences   │     │Recipe Dietary          │           │
+├────────────────────────┤     │Restrictions            │           │
+│ id                     │     ├────────────────────────┤           │
+│ name                   │◄────│ recipeId               │           │
+│ description            │     │ dietaryPreferenceId    │           │
+└────────────────────────┘     │                        │           │
+                               └────────────────────────┘           │
+                                                                    │
+┌────────────────────────┐                                          │
+│  Favorites             │                                          │
+├────────────────────────┤                                          │
+│ id                     │                                          │
+│ userId                 │                                          │
+│ recipeId               │                                          │
+│ externalId             │                                          │
+│ recipeData             │                                          │
+│ createdAt              │                                          │
+└────────────────────────┘                                          │
+```
+
+### Detailed Schema Definition
+
+The database schema is defined with Drizzle ORM and includes the following tables with their relationships:
 
 ### Users Table
-Stores user account information (for future multi-user support).
+```typescript
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  email: text("email"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+```
 
 ### Receipts Table
-Stores metadata about scanned receipts:
-- Receipt ID (primary key)
-- Store name
-- Total amount
-- Date
-- Creation timestamp
+Stores metadata about scanned receipts with relations to users and receipt items:
+```typescript
+export const receipts = pgTable("receipts", {
+  id: serial("id").primaryKey(),
+  store: text("store").default("Unknown Store"),
+  totalAmount: text("total_amount"),
+  date: timestamp("date").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  userId: integer("user_id").references(() => users.id),
+});
+
+export const receiptRelations = relations(receipts, ({ many }) => ({
+  items: many(receiptItems),
+}));
+```
 
 ### Receipt Items Table
-Stores individual items from receipts:
-- Item ID (primary key)
-- Receipt ID (foreign key)
-- Item name
-- Description
-- Price
-- Category
-- Creation timestamp
+Stores individual items from receipts with relations back to the parent receipt:
+```typescript
+export const receiptItems = pgTable("receipt_items", {
+  id: serial("id").primaryKey(),
+  receiptId: integer("receipt_id")
+    .references(() => receipts.id)
+    .notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  price: text("price"),
+  category: text("category"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const receiptItemsRelations = relations(receiptItems, ({ one }) => ({
+  receipt: one(receipts, {
+    fields: [receiptItems.receiptId],
+    references: [receipts.id],
+  }),
+}));
+```
 
 ### Inventory Items Table
-Tracks current inventory:
-- Item ID (primary key)
-- Name
-- Description
-- Category
-- Quantity
-- Unit
-- Expiry date
-- Is in inventory flag
-- Creation timestamp
-- Update timestamp
+Tracks current inventory with advanced features like expiration dates:
+```typescript
+export const inventoryItems = pgTable("inventory_items", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category"),
+  quantity: real("quantity").default(1),
+  unit: text("unit"),
+  expiryDate: timestamp("expiry_date"),
+  isInInventory: boolean("is_in_inventory").default(true),
+  receiptItemId: integer("receipt_item_id")
+    .references(() => receiptItems.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const inventoryItemsRelations = relations(inventoryItems, ({ one }) => ({
+  receiptItem: one(receiptItems, {
+    fields: [inventoryItems.receiptItemId],
+    references: [receiptItems.id],
+  }),
+}));
+```
 
 ### Recipes Table
-Stores recipe information:
-- Recipe ID (primary key)
-- Title
-- Description
-- Image URL
-- Instructions
-- Preparation time
-- Cooking time
-- Servings
-- Source URL
-- Meal type ID (foreign key)
-- Creation timestamp
-- Update timestamp
+Stores comprehensive recipe information with complex relationships:
+```typescript
+export const recipes = pgTable("recipes", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  imageUrl: text("image_url"),
+  instructions: text("instructions"),
+  prepTime: integer("prep_time"),
+  cookTime: integer("cook_time"),
+  servings: integer("servings"),
+  sourceUrl: text("source_url"),
+  mealTypeId: integer("meal_type_id")
+    .references(() => mealTypes.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const recipeRelations = relations(recipes, ({ many, one }) => ({
+  ingredients: many(recipeIngredients),
+  dietaryRestrictions: many(recipeDietaryRestrictions),
+  mealType: one(mealTypes, {
+    fields: [recipes.mealTypeId],
+    references: [mealTypes.id],
+  }),
+}));
+```
 
 ### Recipe Ingredients Table
-Maps ingredients to recipes:
-- ID (primary key)
-- Recipe ID (foreign key)
-- Name
-- Amount
-- Unit
-- Optional flag
+Maps ingredients to recipes with detailed quantity information:
+```typescript
+export const recipeIngredients = pgTable("recipe_ingredients", {
+  id: serial("id").primaryKey(),
+  recipeId: integer("recipe_id")
+    .references(() => recipes.id)
+    .notNull(),
+  name: text("name").notNull(),
+  amount: real("amount"),
+  unit: text("unit"),
+  isOptional: boolean("is_optional").default(false),
+});
+
+export const recipeIngredientsRelations = relations(recipeIngredients, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipeIngredients.recipeId],
+    references: [recipes.id],
+  }),
+}));
+```
 
 ### Meal Types Table
-Defines available meal types:
-- ID (primary key)
-- Name
-- Description
+Defines available meal types (breakfast, lunch, dinner, etc.):
+```typescript
+export const mealTypes = pgTable("meal_types", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+});
+```
 
 ### Dietary Preferences Table
-Defines dietary preference options:
-- ID (primary key)
-- Name
-- Description
+Defines dietary preference options (vegetarian, gluten-free, etc.):
+```typescript
+export const dietaryPreferences = pgTable("dietary_preferences", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+});
+```
 
 ### Recipe Dietary Restrictions Table
-Maps recipes to dietary restrictions:
-- Recipe ID (foreign key)
-- Dietary preference ID (foreign key)
+Many-to-many mapping between recipes and dietary restrictions:
+```typescript
+export const recipeDietaryRestrictions = pgTable("recipe_dietary_restrictions", {
+  recipeId: integer("recipe_id")
+    .references(() => recipes.id)
+    .notNull(),
+  dietaryPreferenceId: integer("dietary_preference_id")
+    .references(() => dietaryPreferences.id)
+    .notNull(),
+});
+
+export const recipeDietaryRestrictionsRelations = relations(recipeDietaryRestrictions, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipeDietaryRestrictions.recipeId],
+    references: [recipes.id],
+  }),
+  dietaryPreference: one(dietaryPreferences, {
+    fields: [recipeDietaryRestrictions.dietaryPreferenceId],
+    references: [dietaryPreferences.id],
+  }),
+}));
+```
+
+### Schema Design Considerations
+
+1. **Type Safety**: The schema leverages TypeScript for full type safety across the stack
+2. **Referential Integrity**: Foreign key constraints ensure data consistency
+3. **Normalization**: Tables are properly normalized to minimize redundancy
+4. **Timestamps**: All tables include creation timestamps for audit trails
+5. **Soft Deletion**: Inventory uses boolean flags instead of hard deletion
+6. **Flexible Storage**: JSON fields used where appropriate for semi-structured data
 
 ## 🔄 Workflow Example
 
