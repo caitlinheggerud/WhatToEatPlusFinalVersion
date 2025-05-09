@@ -215,17 +215,14 @@ export class DatabaseStorage implements IStorage {
     
     // Add each item to inventory
     const inventoryItemsPromises = foodItems.map(item => {
-      // Determine a more specific category for the item
-      const specificCategory = this.determineFoodCategory(item.name);
-      
-      // Calculate expiry date based on the specific category
-      const expiryDate = this.getDefaultExpiryDate(specificCategory);
+      // Default expiry date to 7 days from now for perishables, null for non-perishables
+      const expiryDate = this.getDefaultExpiryDate(item.category || 'Other');
       
       return this.createInventoryItem({
         name: item.name,
         description: item.description || null,
         quantity: "1", // Default quantity
-        category: specificCategory,
+        category: item.category || 'Other',
         expiryDate,
         isInInventory: true,
         sourceReceiptId: receiptId
@@ -233,58 +230,6 @@ export class DatabaseStorage implements IStorage {
     });
     
     return Promise.all(inventoryItemsPromises);
-  }
-  
-  private determineFoodCategory(itemName: string): string {
-    const name = itemName.toLowerCase();
-    
-    // Produce (fruits & vegetables)
-    if (/apple|orange|banana|lettuce|tomato|carrot|potato|broccoli|cabbage|spinach|kale|onion|garlic|pepper|grape|berry|strawberry|blueberry|melon|fruit|vegetable|produce|cucumber|celery|salad|greens|asparagus|avocado|corn|squash|zucchini|eggplant|lemon|lime|pear|peach|plum|pineapple|mango|ginger|bell pepper|green bean/i.test(name)) {
-      return "Produce";
-    }
-    
-    // Meat
-    if (/beef|chicken|steak|pork|ham|turkey|ground beef|bacon|sausage|lamb|ribs|roast|meat|chuck|sirloin|burger|tenderloin|veal|brisket|hot dog|chorizo|duck|rabbit/i.test(name)) {
-      return "Meat";
-    }
-    
-    // Seafood
-    if (/fish|shrimp|salmon|tuna|cod|tilapia|crab|lobster|scallop|clam|oyster|mussel|seafood|sardine|anchovy|catfish|halibut|trout|squid|octopus|prawn|sushi|calamari/i.test(name)) {
-      return "Seafood";
-    }
-    
-    // Dairy
-    if (/milk|cheese|yogurt|butter|cream|sour cream|ice cream|dairy|cheddar|mozzarella|parmesan|cottage cheese|ricotta|brie|feta|gouda|swiss cheese|whipped cream|half and half|creamer|custard|pudding/i.test(name)) {
-      return "Dairy";
-    }
-    
-    // Bakery
-    if (/bread|muffin|cake|cookie|pie|pastry|roll|bun|bagel|croissant|toast|tortilla|wrap|dough|baked|bakery|donut|danish|flour|baking|brownie|scone|waffle|pancake/i.test(name)) {
-      return "Bakery";
-    }
-    
-    // Pantry
-    if (/pasta|rice|cereal|oil|vinegar|sauce|spice|herb|condiment|canned|can|jar|seasoning|soup|bean|lentil|grain|flour|sugar|syrup|honey|jam|peanut butter|ketchup|mustard|mayo|mayonnaise|dressing|olive oil|soy sauce|pasta sauce|broth|stock|noodle|mix|salt|pepper|pantry/i.test(name)) {
-      return "Pantry";
-    }
-    
-    // Frozen
-    if (/frozen|ice cream|popsicle|freezer|pizza|frozen meal|frozen dinner|frozen vegetable|frozen fruit|tv dinner|hot pocket|ice|sorbet|frozen breakfast|waffles|frozen dessert/i.test(name)) {
-      return "Frozen";
-    }
-    
-    // Beverages
-    if (/water|soda|pop|cola|juice|coffee|tea|beer|wine|alcohol|drink|beverage|milk|lemonade|smoothie|shake|energy drink|sports drink|sparkling water|cider|cocktail|liquor|vodka|whiskey|rum|gin|tequila/i.test(name)) {
-      return "Beverages";
-    }
-    
-    // Snacks
-    if (/chip|crisp|cracker|pretzel|popcorn|nut|snack|granola|bar|candy|chocolate|sweet|treat|gum|mints|trail mix|jerky|dried fruit|cookie|biscuit|snack bar|rice cake|pork rind|corn chip|potato chip/i.test(name)) {
-      return "Snacks";
-    }
-    
-    // Default to "Other" for unknown items
-    return "Other";
   }
   
   private getDefaultExpiryDate(category: string): Date | null {

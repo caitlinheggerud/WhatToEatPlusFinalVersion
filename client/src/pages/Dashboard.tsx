@@ -5,204 +5,36 @@ import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DownloadIcon, PieChartIcon, BarChartIcon, CalendarIcon, FilterIcon, UploadIcon, ReceiptIcon, XIcon } from "lucide-react";
+import { DownloadIcon, PieChartIcon, BarChartIcon, CalendarIcon, FilterIcon, UploadIcon, ReceiptIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { type ReceiptItemResponse } from "@shared/schema";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { format, parseISO, isAfter, isBefore, isValid, startOfDay } from "date-fns";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Label } from "@/components/ui/label";
-
-// Extended interfaces for our component
-interface ReceiptData {
-  id: number;
-  store: string | null;
-  totalAmount: string | null;
-  date: string | Date;
-  createdAt: string | Date;
-}
-
-interface ExtendedReceiptItem extends ReceiptItemResponse {
-  receiptId?: number;
-}
 
 export default function Dashboard() {
-  const [receipts, setReceipts] = useState<ExtendedReceiptItem[]>([]);
-  const [allReceipts, setAllReceipts] = useState<ExtendedReceiptItem[]>([]);
+  const [receipts, setReceipts] = useState<ReceiptItemResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [isDateFilterActive, setIsDateFilterActive] = useState(false);
-  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
   const { toast } = useToast();
-
-  // Store receipt data with dates
-  const [receiptData, setReceiptData] = useState<ReceiptData[]>([]);
-  
-  // Apply date filters
-  useEffect(() => {
-    if (!isDateFilterActive || (!startDate && !endDate)) {
-      setReceipts(allReceipts);
-      return;
-    }
-
-    // First filter receipts by date
-    const filteredReceiptIds = receiptData
-      .filter(receipt => {
-        try {
-          // Parse the receipt date - ensure it's a valid date
-          let receiptDate;
-          
-          if (typeof receipt.date === 'string') {
-            // Handle various date string formats
-            receiptDate = parseISO(receipt.date);
-            if (!isValid(receiptDate)) {
-              // Try alternative format if needed
-              receiptDate = new Date(receipt.date);
-            }
-          } else {
-            receiptDate = new Date(receipt.date);
-          }
-          
-          // Skip invalid dates
-          if (!isValid(receiptDate)) {
-            console.warn(`Invalid date for receipt ${receipt.id}:`, receipt.date);
-            return false;
-          }
-          
-          // Apply start date filter if it exists
-          if (startDate) {
-            const start = new Date(startDate);
-            start.setHours(0, 0, 0, 0); // Set to start of day
-            if (isBefore(receiptDate, start)) {
-              return false;
-            }
-          }
-          
-          // Apply end date filter if it exists
-          if (endDate) {
-            // Set time to end of day
-            const endOfDay = new Date(endDate);
-            endOfDay.setHours(23, 59, 59, 999);
-            
-            if (isAfter(receiptDate, endOfDay)) {
-              return false;
-            }
-          }
-          
-          return true;
-        } catch (error) {
-          console.error(`Date filtering error for receipt ${receipt.id}:`, error);
-          return false;
-        }
-      })
-      .map(receipt => receipt.id);
-    
-    // Debug info if filtering isn't working as expected
-    if (filteredReceiptIds.length === 0) {
-      console.log("No receipts matched the date filter", {
-        startDate: startDate?.toISOString(),
-        endDate: endDate?.toISOString(),
-        receipts: receiptData.map(r => ({
-          id: r.id,
-          date: r.date,
-          type: typeof r.date
-        }))
-      });
-    } else {
-      console.log(`Found ${filteredReceiptIds.length} receipts matching date range:`, filteredReceiptIds);
-    }
-    
-    // Then filter receipt items based on the filtered receipt IDs
-    const filtered = allReceipts.filter(item => {
-      return item.receiptId !== undefined && filteredReceiptIds.includes(item.receiptId);
-    });
-    
-    setReceipts(filtered);
-  }, [allReceipts, receiptData, startDate, endDate, isDateFilterActive]);
-
-  // Handle applying date filter
-  const applyDateFilter = () => {
-    if (!startDate && !endDate) {
-      toast({
-        title: "Error",
-        description: "Please select at least one date for filtering",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsDateFilterActive(true);
-    setIsDatePopoverOpen(false);
-    
-    toast({
-      title: "Date Filter Applied",
-      description: `Showing items from ${startDate ? format(startDate, 'PP') : 'the beginning'} to ${endDate ? format(endDate, 'PP') : 'today'}`,
-    });
-  };
-  
-  // Handle clearing date filter
-  const clearDateFilter = () => {
-    setStartDate(undefined);
-    setEndDate(undefined);
-    setIsDateFilterActive(false);
-    setIsDatePopoverOpen(false);
-    
-    toast({
-      title: "Date Filter Cleared",
-      description: "Showing all items",
-    });
-  };
 
   useEffect(() => {
     async function fetchReceipts() {
       try {
         setLoading(true);
+        // First fetch all receipt headers
+        const receiptData = await getReceipts();
         
-        // Get all receipt headers
-        const receipts = await getReceipts();
-        setReceiptData(receipts || []);
-        
-        // Get all receipt items directly (simpler approach)
-        try {
-          // Get all receipt items at once
-          const allItems = await getReceiptItems();
-          
-          if (Array.isArray(allItems) && allItems.length > 0) {
-            // Process the items to ensure they have receipt IDs
-            const processedItems = await Promise.all(
-              allItems.map(async (item) => {
-                // If item doesn't have a receiptId, try to find it in receipts
-                if (!item.receiptId && item.id) {
-                  // Find the receipt that might contain this item
-                  const matchingReceipt = receipts.find((receipt: any) => 
-                    receipt.items && Array.isArray(receipt.items) && 
-                    receipt.items.some((receiptItem: any) => receiptItem.id === item.id)
-                  );
-                  
-                  if (matchingReceipt) {
-                    return {
-                      ...item,
-                      receiptId: matchingReceipt.id
-                    };
-                  }
-                }
-                return item;
-              })
-            );
-            
-            setAllReceipts(processedItems);
-            setReceipts(processedItems);
-          } else {
-            console.log("No receipt items found");
-            setAllReceipts([]);
+        // If we have receipts, get all the receipt items
+        if (receiptData && receiptData.length > 0) {
+          try {
+            // Get all receipt items using the updated endpoint
+            const allItems = await getReceiptItems();
+            setReceipts(allItems);
+          } catch (itemsError) {
+            console.error("Error fetching receipt items:", itemsError);
+            // Fallback to empty items if there's an error
             setReceipts([]);
           }
-        } catch (itemsError) {
-          console.error("Error fetching receipt items:", itemsError);
-          setAllReceipts([]);
+        } else {
           setReceipts([]);
         }
       } catch (err) {
@@ -212,8 +44,7 @@ export default function Dashboard() {
           description: "Failed to load receipt history",
           variant: "destructive",
         });
-        setReceiptData([]);
-        setAllReceipts([]);
+        // Set empty array to prevent rendering errors
         setReceipts([]);
       } finally {
         setLoading(false);
@@ -278,77 +109,21 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant={isDateFilterActive ? "default" : "outline"} 
-                  size="sm" 
-                  className={isDateFilterActive 
-                    ? "bg-primary hover:bg-primary/90 transition-colors" 
-                    : "bg-white hover:bg-white/80 transition-colors"}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {isDateFilterActive 
-                    ? `${startDate ? format(startDate, 'MM/dd/yy') : ''} - ${endDate ? format(endDate, 'MM/dd/yy') : ''}` 
-                    : "Date Range"}
-                  {isDateFilterActive && (
-                    <XIcon 
-                      className="ml-2 h-3 w-3 hover:text-destructive"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        clearDateFilter();
-                      }}
-                    />
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-4" align="end">
-                <div className="grid gap-4">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Date Range</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Select a date range to filter your receipts.
-                    </p>
-                  </div>
-                  <div className="grid gap-2">
-                    <div className="grid gap-1">
-                      <Label htmlFor="startDate">Start Date</Label>
-                      <Calendar
-                        mode="single"
-                        selected={startDate}
-                        onSelect={setStartDate}
-                        className="border rounded-md p-3"
-                      />
-                    </div>
-                    <div className="grid gap-1">
-                      <Label htmlFor="endDate">End Date</Label>
-                      <Calendar
-                        mode="single"
-                        selected={endDate}
-                        onSelect={setEndDate}
-                        className="border rounded-md p-3"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-between">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={clearDateFilter}
-                    >
-                      Clear
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="bg-gradient"
-                      onClick={applyDateFilter}
-                    >
-                      Apply Filter
-                    </Button>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="bg-white hover:bg-white/80 transition-colors"
+              onClick={() => {
+                toast({
+                  title: "Date Range",
+                  description: "Date range filtering will be available in a future update.",
+                  duration: 3000,
+                });
+              }}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+              Date Range
+            </Button>
             <Button 
               variant="outline" 
               size="sm" 

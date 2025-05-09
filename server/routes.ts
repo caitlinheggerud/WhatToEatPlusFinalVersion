@@ -402,14 +402,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all receipt items (legacy endpoint)
   app.get("/api/receipts/items", async (req: Request, res: Response) => {
     try {
-      // Always return all receipt items for simplicity
-      // This endpoint is used primarily for the dashboard
-      const items = await storage.getReceiptItems();
-      return res.status(200).json(items || []);
+      // Check if a receipt ID is provided as a query parameter
+      const receiptId = req.query.receiptId ? parseInt(req.query.receiptId as string) : null;
+      
+      let items;
+      if (receiptId) {
+        // If receipt ID is provided, get items for that receipt
+        items = await storage.getReceiptItemsByReceiptId(receiptId);
+      } else {
+        // If no receipt ID is provided, get all receipt items
+        items = await storage.getReceiptItems();
+      }
+      
+      return res.status(200).json(items);
     } catch (error) {
       console.error("Error fetching receipt items:", error);
-      // Return an empty array instead of an error for better frontend experience
-      return res.status(200).json([]);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Unknown error occurred while fetching receipt items" 
+      });
     }
   });
   

@@ -36,17 +36,8 @@ export async function saveReceiptItems(items: ReceiptItemResponse[]): Promise<an
  * Fetches all receipt items from the server
  */
 export async function getReceiptItems(): Promise<any> {
-  try {
-    const response = await apiRequest('GET', '/api/receipts/items');
-    if (!response.ok) {
-      console.warn('Failed to fetch receipt items');
-      return [];
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching receipt items:', error);
-    return [];
-  }
+  const response = await apiRequest('GET', '/api/receipts/items');
+  return await response.json();
 }
 
 /**
@@ -99,14 +90,6 @@ export async function deleteInventoryItem(id: number): Promise<any> {
     return { success: true };
   }
   return response.json();
-}
-
-/**
- * Update an inventory item
- */
-export async function updateInventoryItem(id: number, item: any): Promise<any> {
-  const response = await apiRequest('PATCH', `/api/inventory/${id}`, item);
-  return await response.json();
 }
 
 /**

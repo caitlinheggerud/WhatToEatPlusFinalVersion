@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/hooks/use-toast';
-import { getInventoryItems, addInventoryItem, deleteInventoryItem, updateInventoryItem } from '../lib/api';
+import { getInventoryItems, addInventoryItem, deleteInventoryItem } from '../lib/api';
 import { 
   PlusIcon, 
   Trash2Icon, 
@@ -21,18 +21,8 @@ import {
   AlertCircleIcon,
   Loader2Icon,
   PackageIcon,
-  CalendarIcon,
-  CalendarDaysIcon
+  CalendarIcon
 } from 'lucide-react';
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { format, parseISO, isValid, addDays } from 'date-fns';
 
 type InventoryItem = {
@@ -69,9 +59,6 @@ function Inventory() {
   const [filter, setFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [showNewItemForm, setShowNewItemForm] = useState<boolean>(false);
-  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
-  const [expiryDate, setExpiryDate] = useState<string>('');
-  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [newItem, setNewItem] = useState({
     name: '',
     description: '',
@@ -167,44 +154,6 @@ function Inventory() {
       toast({
         title: "Error",
         description: "Failed to remove item from inventory",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  // Open dialog to add expiration date
-  const openExpiryDialog = (item: InventoryItem) => {
-    setSelectedItem(item);
-    setExpiryDate(item.expiryDate || '');
-    setIsDialogOpen(true);
-  };
-  
-  // Update expiration date
-  const handleUpdateExpiryDate = async () => {
-    if (!selectedItem) return;
-    
-    try {
-      await updateInventoryItem(selectedItem.id, {
-        expiryDate: expiryDate || null
-      });
-      
-      toast({
-        title: "Success",
-        description: "Expiration date updated successfully",
-        variant: "default",
-      });
-      
-      // Refresh inventory
-      fetchInventoryItems();
-      
-      // Close dialog
-      setIsDialogOpen(false);
-      setSelectedItem(null);
-    } catch (err) {
-      console.error("Error updating expiration date:", err);
-      toast({
-        title: "Error",
-        description: "Failed to update expiration date",
         variant: "destructive",
       });
     }
@@ -484,26 +433,14 @@ function Inventory() {
                                 )}
                               </td>
                               <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => openExpiryDialog(item)}
-                                    className="text-primary hover:text-primary/90 hover:bg-primary/10"
-                                    title="Add Expiration Date"
-                                  >
-                                    <CalendarDaysIcon className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDeleteItem(item.id)}
-                                    className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                                    title="Delete Item"
-                                  >
-                                    <Trash2Icon className="h-4 w-4" />
-                                  </Button>
-                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteItem(item.id)}
+                                  className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                                >
+                                  <Trash2Icon className="h-4 w-4" />
+                                </Button>
                               </td>
                             </tr>
                           ))}
@@ -537,26 +474,14 @@ function Inventory() {
                                   <p className="font-medium">{item.name}</p>
                                   <p className="text-xs text-muted-foreground">{item.quantity}</p>
                                 </div>
-                                <div className="flex gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => openExpiryDialog(item)}
-                                    className="text-primary hover:text-primary/90 hover:bg-primary/10"
-                                    title="Add Expiration Date"
-                                  >
-                                    <CalendarDaysIcon className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDeleteItem(item.id)}
-                                    className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                                    title="Delete Item"
-                                  >
-                                    <Trash2Icon className="h-4 w-4" />
-                                  </Button>
-                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteItem(item.id)}
+                                  className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                                >
+                                  <Trash2Icon className="h-4 w-4" />
+                                </Button>
                               </li>
                             ))}
                           </ul>
@@ -570,63 +495,6 @@ function Inventory() {
           )}
         </>
       )}
-      
-      {/* Add Expiration Date Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add Expiration Date</DialogTitle>
-            <DialogDescription>
-              Set an expiration date for {selectedItem?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="expiryDate" className="text-right">
-                Expiry Date
-              </Label>
-              <div className="col-span-3">
-                <Input
-                  id="expiryDate"
-                  type="date"
-                  value={expiryDate}
-                  onChange={(e) => setExpiryDate(e.target.value)}
-                  className="col-span-3"
-                />
-              </div>
-            </div>
-            <div className="flex items-center justify-end space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setExpiryDate('')}
-                className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-              >
-                Clear Date
-              </Button>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setIsDialogOpen(false);
-                setSelectedItem(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleUpdateExpiryDate}
-              className="bg-gradient"
-            >
-              <CalendarDaysIcon className="mr-2 h-4 w-4" />
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
     </div>
   );
 }
