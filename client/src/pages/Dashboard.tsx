@@ -5,36 +5,158 @@ import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DownloadIcon, PieChartIcon, BarChartIcon, CalendarIcon, FilterIcon, UploadIcon, ReceiptIcon } from "lucide-react";
+import { DownloadIcon, PieChartIcon, BarChartIcon, CalendarIcon, FilterIcon, UploadIcon, ReceiptIcon, XIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { type ReceiptItemResponse } from "@shared/schema";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { format, parseISO, isAfter, isBefore, isValid } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Label } from "@/components/ui/label";
+
+// Extended interfaces for our component
+interface ReceiptData {
+  id: number;
+  store: string | null;
+  totalAmount: string | null;
+  date: string | Date;
+  createdAt: string | Date;
+}
+
+interface ExtendedReceiptItem extends ReceiptItemResponse {
+  receiptId?: number;
+}
 
 export default function Dashboard() {
-  const [receipts, setReceipts] = useState<ReceiptItemResponse[]>([]);
+  const [receipts, setReceipts] = useState<ExtendedReceiptItem[]>([]);
+  const [allReceipts, setAllReceipts] = useState<ExtendedReceiptItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [isDateFilterActive, setIsDateFilterActive] = useState(false);
+  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
   const { toast } = useToast();
+
+  // Store receipt data with dates
+  const [receiptData, setReceiptData] = useState<ReceiptData[]>([]);
+  
+  // Apply date filters
+  useEffect(() => {
+    if (!isDateFilterActive || (!startDate && !endDate)) {
+      setReceipts(allReceipts);
+      return;
+    }
+
+    // First filter receipts by date
+    const filteredReceiptIds = receiptData
+      .filter(receipt => {
+        try {
+          // Parse the receipt date
+          const receiptDate = typeof receipt.date === 'string' 
+            ? parseISO(receipt.date) 
+            : new Date(receipt.date);
+            
+          if (!isValid(receiptDate)) return false;
+          
+          // Apply start date filter if it exists
+          if (startDate && isBefore(receiptDate, startDate)) {
+            return false;
+          }
+          
+          // Apply end date filter if it exists
+          if (endDate) {
+            // Set time to end of day
+            const endOfDay = new Date(endDate);
+            endOfDay.setHours(23, 59, 59, 999);
+            
+            if (isAfter(receiptDate, endOfDay)) {
+              return false;
+            }
+          }
+          
+          return true;
+        } catch (error) {
+          return false;
+        }
+      })
+      .map(receipt => receipt.id);
+    
+    // Then filter receipt items based on the filtered receipt IDs
+    const filtered = allReceipts.filter(item => {
+      return item.receiptId && filteredReceiptIds.includes(item.receiptId);
+    });
+    
+    setReceipts(filtered);
+  }, [allReceipts, receiptData, startDate, endDate, isDateFilterActive]);
+
+  // Handle applying date filter
+  const applyDateFilter = () => {
+    if (!startDate && !endDate) {
+      toast({
+        title: "Error",
+        description: "Please select at least one date for filtering",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsDateFilterActive(true);
+    setIsDatePopoverOpen(false);
+    
+    toast({
+      title: "Date Filter Applied",
+      description: `Showing items from ${startDate ? format(startDate, 'PP') : 'the beginning'} to ${endDate ? format(endDate, 'PP') : 'today'}`,
+    });
+  };
+  
+  // Handle clearing date filter
+  const clearDateFilter = () => {
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setIsDateFilterActive(false);
+    setIsDatePopoverOpen(false);
+    
+    toast({
+      title: "Date Filter Cleared",
+      description: "Showing all items",
+    });
+  };
 
   useEffect(() => {
     async function fetchReceipts() {
       try {
         setLoading(true);
         // First fetch all receipt headers
-        const receiptData = await getReceipts();
+        const receipts = await getReceipts();
+        setReceiptData(receipts || []);
         
         // If we have receipts, get all the receipt items
-        if (receiptData && receiptData.length > 0) {
+        if (receipts && receipts.length > 0) {
           try {
             // Get all receipt items using the updated endpoint
             const allItems = await getReceiptItems();
-            setReceipts(allItems);
+            
+            // Ensure receiptId field is present and is a number
+            const processedItems = Array.isArray(allItems) ? allItems.map(item => {
+              return {
+                ...item,
+                receiptId: typeof item.receiptId === 'string' 
+                  ? parseInt(item.receiptId, 10) 
+                  : item.receiptId
+              };
+            }) : [];
+            
+            setAllReceipts(processedItems);
+            setReceipts(processedItems);
           } catch (itemsError) {
             console.error("Error fetching receipt items:", itemsError);
             // Fallback to empty items if there's an error
+            setAllReceipts([]);
             setReceipts([]);
           }
         } else {
+          setAllReceipts([]);
           setReceipts([]);
         }
       } catch (err) {
@@ -45,6 +167,8 @@ export default function Dashboard() {
           variant: "destructive",
         });
         // Set empty array to prevent rendering errors
+        setReceiptData([]);
+        setAllReceipts([]);
         setReceipts([]);
       } finally {
         setLoading(false);
@@ -109,21 +233,77 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="bg-white hover:bg-white/80 transition-colors"
-              onClick={() => {
-                toast({
-                  title: "Date Range",
-                  description: "Date range filtering will be available in a future update.",
-                  duration: 3000,
-                });
-              }}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
-              Date Range
-            </Button>
+            <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant={isDateFilterActive ? "default" : "outline"} 
+                  size="sm" 
+                  className={isDateFilterActive 
+                    ? "bg-primary hover:bg-primary/90 transition-colors" 
+                    : "bg-white hover:bg-white/80 transition-colors"}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {isDateFilterActive 
+                    ? `${startDate ? format(startDate, 'MM/dd/yy') : ''} - ${endDate ? format(endDate, 'MM/dd/yy') : ''}` 
+                    : "Date Range"}
+                  {isDateFilterActive && (
+                    <XIcon 
+                      className="ml-2 h-3 w-3 hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        clearDateFilter();
+                      }}
+                    />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-4" align="end">
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold">Date Range</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Select a date range to filter your receipts.
+                    </p>
+                  </div>
+                  <div className="grid gap-2">
+                    <div className="grid gap-1">
+                      <Label htmlFor="startDate">Start Date</Label>
+                      <Calendar
+                        mode="single"
+                        selected={startDate}
+                        onSelect={setStartDate}
+                        className="border rounded-md p-3"
+                      />
+                    </div>
+                    <div className="grid gap-1">
+                      <Label htmlFor="endDate">End Date</Label>
+                      <Calendar
+                        mode="single"
+                        selected={endDate}
+                        onSelect={setEndDate}
+                        className="border rounded-md p-3"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-between">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={clearDateFilter}
+                    >
+                      Clear
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="bg-gradient"
+                      onClick={applyDateFilter}
+                    >
+                      Apply Filter
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
             <Button 
               variant="outline" 
               size="sm" 
